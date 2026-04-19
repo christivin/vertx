@@ -6,11 +6,23 @@ export type HelloFrame = {
   snapshot?: Record<string, unknown>;
 };
 
+export type RequestFrame = {
+  type: "req";
+  id: string;
+  method: string;
+  payload?: unknown;
+};
+
 export type ResponseFrame = {
   type: "res";
   id: string;
   ok: boolean;
   payload?: unknown;
+  error?: {
+    code: string;
+    message: string;
+    details?: unknown;
+  };
 };
 
 export type ErrorFrame = {
@@ -65,4 +77,6 @@ export type EventFrame = {
   stateVersion?: { presence?: number; health?: number };
 };
 
-export type GatewayFrame = HelloFrame | ResponseFrame | ErrorFrame | EventFrame;
+export type GatewayEventName = EventFrame["event"];
+
+export type GatewayFrame = HelloFrame | RequestFrame | ResponseFrame | ErrorFrame | EventFrame;

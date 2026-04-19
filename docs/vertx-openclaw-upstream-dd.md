@@ -97,3 +97,17 @@ Vertx 后续实现必须遵守：
 2. 在文档里记录需要触碰 OpenClaw 的精确入口点
 3. 为关键依赖建立契约测试
 4. 再评估是否需要真正修改 `upstream/openclaw`
+
+### 当前进展补记（2026-04-20）
+
+相对上述下一步，当前已经完成：
+
+- 前端 realtime 基线已启动，包含独立 `realtime-gateway` 包与前端 websocket client
+- 已建立最小契约测试，覆盖 hello、event broadcast、request/response
+- `SessionDetailPage` 已从纯 mock 页面升级为 gateway-first 接入模式
+
+下一步收敛重点变为：
+
+- 把 `openclaw` 的真实 gateway / runtime 事件接进 `RealtimeBridgeAdapter`
+- 为 `chat.history`、`chat.send`、`tool stream`、`sessions.changed` 建更多契约测试
+- 在真正修改 `openclaw/` 核心路径之前，先把拟修改入口点和 patch 分类记录到 `ops/upstream/openclaw-mods.md`

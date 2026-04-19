@@ -270,6 +270,14 @@ Vertx 前端固定采用双链路：
 - 前端本地维护 `chatStream / toolStream / runId / queue` 等状态
 - `会话 / 运行详情` 以 realtime plane 为主，历史补全再结合 Product API 或 gateway history
 
+#### 当前实现锚点（2026-04-20）
+
+- `openclaw/` 已在 Vertx 仓库中以源码快照方式内嵌，当前视作 Vertx 二次开发基座
+- `app/web` 已建立独立前端骨架，不复用 `openclaw/ui` 的 Lit 控制台
+- `packages/realtime-gateway-contracts`、`packages/openclaw-adapter`、`packages/realtime-gateway` 已落最小可运行代码
+- `会话详情` 已优先接 realtime gateway，而不是依赖 controller 聚合文本
+- 当前仍处于“前端 realtime 基线已通、runtime 真桥接待接入”的阶段
+
 ---
 
 ## 7. 对其他项目的吸收方式

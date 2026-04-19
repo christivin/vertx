@@ -19,6 +19,24 @@
 - `vertx-frontend-reference.md`：上游前端参考拆解
 - `vertx-frontend-build-plan.md`：当前前端工程实施规格
 
+### 当前落地进展（2026-04-20）
+
+当前已经完成的最小实现锚点：
+
+- `openclaw/` 已作为 Vertx 仓库内嵌基座源码引入，当前按二次开发方式管理
+- `app/web` 已完成 React 19 + Vite + Router + Query + Tailwind v4 基线
+- `shared/realtime` 已具备 `chatStream / toolStream / runId / queue / approval` 的 reducer 与测试
+- `packages/realtime-gateway-contracts` 已补齐 `hello / req / res / event / error` 协议基础
+- `packages/openclaw-adapter` 已补齐 `RealtimeBridgeAdapter` 的上下文注入与事件归一能力
+- `packages/realtime-gateway` 已具备最小 websocket server、事件广播、请求转发与测试
+- `SessionDetailPage` 已改为“优先连接 realtime gateway，失败时回退 mock frames”
+
+当前仍未完成但方向已固定：
+
+- Product API 仍主要是 mock data
+- Realtime Gateway 还没有真正桥接 `openclaw` runtime 事件源
+- `chat.history`、`approval`、`sessions.changed` 等方法/事件还只是协议留位，没有完整业务后端
+
 ## 2. 双链路架构
 
 Vertx 前端固定采用双链路：
@@ -244,12 +262,19 @@ app/web/src
 - 建 reducer
 - 建 reconnect / seq-gap 恢复逻辑
 - 用 mock frames 验证 `chatStream / toolStream / runId / queue`
+- 当前状态：
+  - 已完成基础 reducer、client、mock frames、seq-gap 恢复入口
+  - 已在 `SessionDetailPage` 中接入并验证 gateway 优先 / mock 回退逻辑
 
 ### 阶段 3：Realtime Gateway
 
 - 打通 Vertx -> OpenClaw Realtime Bridge
 - 保留原始事件粒度
 - 完成会话详情页的端到端流式体验
+- 当前状态：
+  - 已完成独立 `packages/realtime-gateway`
+  - 已具备 hello、event broadcast、request/response 最小能力与测试
+  - 下一步是把 `openclaw` 实际事件源接到 `RealtimeBridgeAdapter`
 
 ### 阶段 4：Product API
 

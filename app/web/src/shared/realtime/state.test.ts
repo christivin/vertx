@@ -15,4 +15,15 @@ describe("realtimeReducer", () => {
     expect(state.chatStream).toBeNull();
     expect(state.chatRunId).toBeNull();
   });
+
+  it("moves into recovering state when reconnect flow starts", () => {
+    const state = realtimeReducer(initialRealtimeState, {
+      type: "recover.start",
+      reason: "检测到事件序列缺口，正在恢复…",
+    });
+
+    expect(state.connectionStatus).toBe("recovering");
+    expect(state.lastError).toContain("恢复");
+    expect(state.chatLoading).toBe(true);
+  });
 });

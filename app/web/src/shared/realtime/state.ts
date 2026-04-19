@@ -1,6 +1,6 @@
 import type { AgentEventPayload, EventFrame, HelloFrame, ToolStatusEventPayload } from "@vertx/realtime-gateway-contracts";
 
-export type ConnectionStatus = "idle" | "connecting" | "connected" | "closed" | "error";
+export type ConnectionStatus = "idle" | "connecting" | "connected" | "recovering" | "closed" | "error";
 
 export type ChatMessage = {
   id: string;
@@ -31,6 +31,7 @@ export type RealtimeState = {
 
 export type RealtimeAction =
   | { type: "connect.start" }
+  | { type: "recover.start"; reason: string }
   | { type: "connect.error"; error: string }
   | { type: "connect.close" }
   | { type: "hello"; frame: HelloFrame }
@@ -60,6 +61,15 @@ function syncToolMessages(state: RealtimeState) {
   state.chatToolMessages = state.toolStreamOrder
     .map((id) => state.toolStreamById[id])
     .filter(Boolean);
+}
+
+function finalizeChatRun(state: RealtimeState) {
+  state.chatRunId = null;
+  state.chatSending = false;
+  state.chatLoading = false;
+  state.chatStream = null;
+  state.chatStreamStartedAt = null;
+  state.chatQueue = [];
 }
 
 function applyAgentStream(state: RealtimeState, payload: AgentEventPayload) {
@@ -110,11 +120,47 @@ function applyChatEvent(state: RealtimeState, payload: Record<string, unknown>) 
   }
 
   if (chatState === "aborted" || chatState === "error" || chatState === "final") {
-    state.chatRunId = null;
-    state.chatSending = false;
-    state.chatStream = null;
-    state.chatStreamStartedAt = null;
+    finalizeChatRun(state);
   }
+}
+
+function applyRunStatus(state: RealtimeState, payload: Record<string, unknown>) {
+  const status =
+    typeof payload.status === "string"
+      ? payload.status
+      : typeof payload.phase === "string"
+        ? payload.phase
+        : null;
+
+  if (status === "completed" || status === "aborted" || status === "failed" || status === "error") {
+    finalizeChatRun(state);
+  }
+}
+
+function applyApprovalRequested(state: RealtimeState, payload: Record<string, unknown>) {
+  const id = typeof payload.id === "string" ? payload.id : null;
+  const title =
+    typeof payload.title === "string"
+      ? payload.title
+      : typeof payload.name === "string"
+        ? payload.name
+        : "待审批操作";
+
+  if (!id) {
+    return;
+  }
+  if (state.pendingApprovals.some((item) => item.id === id)) {
+    return;
+  }
+  state.pendingApprovals.push({ id, title });
+}
+
+function applyApprovalResolved(state: RealtimeState, payload: Record<string, unknown>) {
+  const id = typeof payload.id === "string" ? payload.id : null;
+  if (!id) {
+    return;
+  }
+  state.pendingApprovals = state.pendingApprovals.filter((item) => item.id !== id);
 }
 
 export function realtimeReducer(state: RealtimeState, action: RealtimeAction): RealtimeState {
@@ -125,16 +171,25 @@ export function realtimeReducer(state: RealtimeState, action: RealtimeAction): R
       next.connectionStatus = "connecting";
       next.lastError = null;
       return next;
+    case "recover.start":
+      next.connectionStatus = "recovering";
+      next.lastError = action.reason;
+      next.chatLoading = true;
+      return next;
     case "connect.error":
       next.connectionStatus = "error";
       next.lastError = action.error;
+      next.chatLoading = false;
       return next;
     case "connect.close":
       next.connectionStatus = "closed";
+      next.chatLoading = false;
       return next;
     case "hello":
       next.connectionStatus = "connected";
       next.lastHelloSnapshot = action.frame.snapshot ?? null;
+      next.chatLoading = false;
+      next.lastError = null;
       return next;
     case "user.queue":
       next.chatMessages.push({
@@ -148,6 +203,7 @@ export function realtimeReducer(state: RealtimeState, action: RealtimeAction): R
         createdAt: Date.now(),
       });
       next.chatSending = true;
+      next.chatLoading = true;
       return next;
     case "event":
       next.lastSeq = action.frame.seq;
@@ -159,6 +215,15 @@ export function realtimeReducer(state: RealtimeState, action: RealtimeAction): R
       }
       if (action.frame.event === "tool.status") {
         applyToolStatus(next, action.frame.payload as ToolStatusEventPayload);
+      }
+      if (action.frame.event === "run.status") {
+        applyRunStatus(next, action.frame.payload as Record<string, unknown>);
+      }
+      if (action.frame.event === "approval.requested") {
+        applyApprovalRequested(next, action.frame.payload as Record<string, unknown>);
+      }
+      if (action.frame.event === "approval.resolved") {
+        applyApprovalResolved(next, action.frame.payload as Record<string, unknown>);
       }
       return next;
     default:
