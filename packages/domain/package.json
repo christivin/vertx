@@ -2,7 +2,16 @@
   "name": "@vertx/domain",
   "private": true,
   "type": "module",
+  "exports": "./src/index.ts",
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --environment node"
+  },
+  "dependencies": {
+    "@vertx/api": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
   }
 }

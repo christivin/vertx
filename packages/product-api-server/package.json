@@ -11,7 +11,8 @@
     "test": "vitest run --environment node"
   },
   "dependencies": {
-    "@vertx/api": "workspace:*"
+    "@vertx/api": "workspace:*",
+    "@vertx/domain": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.8.1",
