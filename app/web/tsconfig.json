@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "types": ["vite/client", "vitest/globals", "node"],
+    "paths": {
+      "@/*": ["./src/*"],
+      "@vertx/api": ["../../packages/api/src/index.ts"],
+      "@vertx/domain": ["../../packages/domain/src/index.ts"],
+      "@vertx/openclaw-adapter": ["../../packages/openclaw-adapter/src/index.ts"],
+      "@vertx/realtime-gateway-contracts": [
+        "../../packages/realtime-gateway-contracts/src/index.ts"
+      ],
+      "@vertx/contracts": ["../../packages/contracts/src/index.ts"]
+    }
+  },
+  "include": ["src", "vite.config.ts"]
+}

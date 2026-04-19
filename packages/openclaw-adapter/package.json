@@ -1,0 +1,11 @@
+{
+  "name": "@vertx/openclaw-adapter",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@vertx/realtime-gateway-contracts": "workspace:*"
+  }
+}

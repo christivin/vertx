@@ -1,0 +1,4 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+export function FilterBar() {
+    return (_jsxs("div", { className: "flex flex-wrap gap-3 rounded-[24px] border border-border-subtle bg-surface-1 p-4 shadow-card", children: [_jsx("input", { className: "min-w-56 rounded-full bg-surface-3 px-4 py-2 text-sm outline-none", placeholder: "\u641C\u7D22\u6D41\u7A0B\u6216\u4EFB\u52A1\u540D" }), _jsxs("select", { className: "rounded-full bg-surface-3 px-4 py-2 text-sm outline-none", children: [_jsx("option", { children: "\u5168\u90E8\u72B6\u6001" }), _jsx("option", { children: "\u8FDB\u884C\u4E2D" }), _jsx("option", { children: "\u5DF2\u5B8C\u6210" }), _jsx("option", { children: "\u5931\u8D25" })] }), _jsxs("select", { className: "rounded-full bg-surface-3 px-4 py-2 text-sm outline-none", children: [_jsx("option", { children: "\u5168\u90E8\u6765\u6E90" }), _jsx("option", { children: "\u98DE\u4E66" }), _jsx("option", { children: "Web" })] })] }));
+}

@@ -88,6 +88,7 @@ docs/
 vertx/
   app/
     web/                    # Vertx 自建前端工作台
+  openclaw/                # 内嵌的 OpenClaw 基座源码，作为二次开发基础
   packages/
     openclaw-adapter/       # 对 OpenClaw 的稳定适配层
     domain/                 # workflow / approval / audit 等业务模型
@@ -105,6 +106,7 @@ vertx/
 - **OpenClaw 的必要改动收敛到薄适配点。**
 - **前端和业务层只依赖 Vertx 自己定义的接口。**
 - **OpenClaw 保持为可跟踪的 upstream 来源，而不是被大量混写后难以同步的内嵌代码。**
+- **`openclaw/` 视作 Vertx 仓库的一部分，作为二次开发基座，但仍需记录改动清单与 upstream 跟进策略。**
 
 ---
 
@@ -249,6 +251,24 @@ Vertx 的前端必须自建，原因如下：
 - 视觉一致性
 - 响应式正确
 - 状态流与真实接口一致
+
+### 6.4 前端实时交互架构
+
+Vertx 前端固定采用双链路：
+
+- `Product Data Plane`
+  - 承载工作台、流程列表、接入管理、设置、知识、自动化、审计等页面
+  - 通过 Vertx Product API / Domain API 提供数据
+- `Realtime Conversation Plane`
+  - 承载会话详情、运行详情中的流式输出、tool 状态、approval 状态、run 生命周期
+  - 通过 Vertx Realtime Gateway 提供实时事件
+
+#### 固定原则
+
+- 主聊天体验不走 controller 聚合文本链路
+- Vertx Realtime Gateway 代理 `openclaw` 原始事件帧，但不把 delta 合并成最终文本
+- 前端本地维护 `chatStream / toolStream / runId / queue` 等状态
+- `会话 / 运行详情` 以 realtime plane 为主，历史补全再结合 Product API 或 gateway history
 
 ---
 
