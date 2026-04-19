@@ -268,6 +268,28 @@ describe("createRealtimeGatewayServer", () => {
               },
             }),
           );
+          return;
+        }
+        if (request.method === "chat.history") {
+          socket.send(
+            JSON.stringify({
+              type: "res",
+              id: request.id,
+              ok: true,
+              payload: {
+                items: [
+                  {
+                    id: "history-1",
+                    role: "assistant",
+                    text: "历史回答",
+                  },
+                ],
+                cursor: null,
+                upstreamMethod: request.method,
+                echoed: request.params,
+              },
+            }),
+          );
         }
       });
     });
@@ -357,6 +379,42 @@ describe("createRealtimeGatewayServer", () => {
       payload: {
         accepted: true,
         upstreamMethod: "chat.send",
+      },
+    });
+
+    socket.send(
+      JSON.stringify({
+        type: "req",
+        id: "req-history",
+        method: "chat.history",
+        payload: {
+          sessionKey: "session-1",
+          limit: 20,
+          beforeSeq: 42,
+        },
+      }),
+    );
+
+    const historyResponse = await nextFrame(socket);
+    expect(historyResponse).toMatchObject({
+      type: "res",
+      id: "req-history",
+      ok: true,
+      payload: {
+        items: [
+          {
+            id: "history-1",
+            role: "assistant",
+            text: "历史回答",
+          },
+        ],
+        cursor: null,
+        upstreamMethod: "chat.history",
+        echoed: {
+          sessionKey: "session-1",
+          limit: 20,
+          beforeSeq: 42,
+        },
       },
     });
   });

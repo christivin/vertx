@@ -36,6 +36,7 @@ export type RealtimeAction =
   | { type: "connect.close" }
   | { type: "hello"; frame: HelloFrame }
   | { type: "user.queue"; text: string }
+  | { type: "history.loaded"; messages: ChatMessage[] }
   | { type: "event"; frame: EventFrame };
 
 export const initialRealtimeState: RealtimeState = {
@@ -204,6 +205,12 @@ export function realtimeReducer(state: RealtimeState, action: RealtimeAction): R
       });
       next.chatSending = true;
       next.chatLoading = true;
+      return next;
+    case "history.loaded":
+      next.chatMessages = action.messages;
+      next.chatLoading = false;
+      next.connectionStatus = "connected";
+      next.lastError = null;
       return next;
     case "event":
       next.lastSeq = action.frame.seq;

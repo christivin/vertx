@@ -2,7 +2,7 @@ import { useCallback, useEffect, useReducer, useRef } from "react";
 import type { GatewayFrame } from "@vertx/realtime-gateway-contracts";
 import { RealtimeGatewayClient } from "./client";
 import { mockHelloFrame, mockRealtimeFrames } from "./mock-frames";
-import { initialRealtimeState, realtimeReducer } from "./state";
+import { type ChatMessage, initialRealtimeState, realtimeReducer } from "./state";
 
 const RECOVERY_DELAY_MS = 1200;
 const MOCK_FRAME_DELAY_MS = 220;
@@ -15,6 +15,39 @@ type UseSessionRealtimeOptions = {
 
 function toErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "realtime gateway request failed";
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function toHistoryMessages(payload: unknown): ChatMessage[] {
+  if (!isRecord(payload) || !Array.isArray(payload.items)) {
+    return [];
+  }
+
+  return payload.items.flatMap((item, index): ChatMessage[] => {
+    if (!isRecord(item)) {
+      return [];
+    }
+    const role = item.role === "user" ? "user" : "assistant";
+    const text =
+      typeof item.text === "string"
+        ? item.text
+        : isRecord(item.message) && typeof item.message.text === "string"
+          ? item.message.text
+          : "";
+    if (!text.trim()) {
+      return [];
+    }
+    return [
+      {
+        id: typeof item.id === "string" ? item.id : `history:${index}`,
+        role,
+        text,
+      },
+    ];
+  });
 }
 
 export function useSessionRealtime(options: UseSessionRealtimeOptions) {
@@ -68,6 +101,21 @@ export function useSessionRealtime(options: UseSessionRealtimeOptions) {
     });
   }, [clearMockTimers]);
 
+  const loadHistory = useCallback(
+    async (client: RealtimeGatewayClient, reason?: string) => {
+      if (reason) {
+        dispatch({ type: "recover.start", reason });
+      }
+      const history = await client.request("chat.history", {
+        sessionKey: options.sessionKey,
+        limit: 50,
+      });
+      const messages = toHistoryMessages(history);
+      dispatch({ type: "history.loaded", messages });
+    },
+    [options.sessionKey],
+  );
+
   const connectGateway = useCallback(() => {
     if (!gatewayUrl) {
       dispatch({ type: "hello", frame: mockHelloFrame });
@@ -84,8 +132,10 @@ export function useSessionRealtime(options: UseSessionRealtimeOptions) {
         dispatch({ type: "connect.error", error });
       },
       onGap: () => {
-        dispatch({ type: "recover.start", reason: "检测到事件序列缺口，正在恢复…" });
-        client.close();
+        void loadHistory(client, "检测到事件序列缺口，正在恢复历史消息…").catch((error) => {
+          dispatch({ type: "connect.error", error: toErrorMessage(error) });
+          client.close();
+        });
       },
       onStatusChange: (status) => {
         if (status === "closed" && !closedByUserRef.current) {
@@ -100,7 +150,7 @@ export function useSessionRealtime(options: UseSessionRealtimeOptions) {
 
     clientRef.current = client;
     client.connect();
-  }, [clearReconnectTimer, gatewayUrl, handleFrame]);
+  }, [clearReconnectTimer, gatewayUrl, handleFrame, loadHistory]);
 
   useEffect(() => {
     closedByUserRef.current = false;
@@ -167,5 +217,12 @@ export function useSessionRealtime(options: UseSessionRealtimeOptions) {
     plane,
     submitTask,
     stopTask,
+    loadHistory: async () => {
+      const client = clientRef.current;
+      if (!client) {
+        throw new Error("realtime gateway is not connected");
+      }
+      await loadHistory(client);
+    },
   };
 }

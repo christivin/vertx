@@ -43,9 +43,10 @@
 
 当前仍未完成但方向已固定：
 
-- Product API 已具备可运行服务入口、Domain Store、Repository 边界与本地 JSON 文件持久化基线，但还没有接生产级持久化、OpenClaw session/run 镜像或飞书真实配置
+- Product API 已具备可运行服务入口、Domain Store、Repository 边界、本地 JSON 文件持久化基线与 realtime mirror client，但还没有接生产级持久化或飞书真实配置
 - OpenClaw remote source 已打通最小握手、事件归一、请求透传与 env 化运行时配置，但还没有接入真实业务鉴权与部署环境
-- `chat.history`、`approval`、`sessions.changed` 等方法/事件还只是协议留位，没有完整业务后端
+- `chat.history` 已具备 adapter/gateway 透传契约与前端恢复入口，但还没有在真实 OpenClaw 部署中做端到端验证
+- `sessions.changed` 等事件还需要继续补真实 OpenClaw 场景下的端到端验证
 
 ## 2. 双链路架构
 
@@ -275,6 +276,8 @@ app/web/src
 - 当前状态：
   - 已完成基础 reducer、client、mock frames、seq-gap 恢复入口
   - 已在 `SessionDetailPage` 中接入并验证 gateway 优先 / mock 回退逻辑
+  - 已补 `history.loaded` reducer，前端在 seq-gap 时会通过 `chat.history` 请求历史消息并恢复本地 message thread
+  - `SessionDetailPage` 已提供 gateway plane 下的手动“同步历史”入口，用于调试和恢复历史线程
 
 ### 阶段 3：Realtime Gateway
 
@@ -286,7 +289,8 @@ app/web/src
   - 已具备 hello、event broadcast、request/response 最小能力与测试
   - 已具备 `OpenClawGatewaySource` 最小握手、事件归一、请求透传能力
   - 已完成 `packages/realtime-gateway-server`，支持 env 配置、固定 websocket path、health check、优雅关闭
-  - 下一步是把真实运行环境中的 `openclaw` gateway 鉴权来源、Product API 与飞书链路接入，并补更多契约测试
+  - 已补 `chat.history` 在 `openclaw-adapter` 与 `realtime-gateway` 两层的请求透传契约测试
+  - 下一步是把真实运行环境中的 `openclaw` gateway 鉴权来源、Product API 与飞书链路接入，并补更多真实场景契约测试
 
 ### 阶段 4：Product API
 

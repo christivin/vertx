@@ -6,7 +6,7 @@ import { TaskComposer } from "@/shared/ui/task-composer";
 import { ToolCallCard } from "@/shared/ui/tool-call-card";
 
 export function SessionDetailPage() {
-  const { state, plane, submitTask, stopTask } = useSessionRealtime({
+  const { state, plane, submitTask, stopTask, loadHistory } = useSessionRealtime({
     sessionKey: "session-1",
   });
 
@@ -25,6 +25,19 @@ export function SessionDetailPage() {
           title="对话线程"
           eyebrow={`plane: ${plane} · connection: ${state.connectionStatus}${state.lastError ? ` · ${state.lastError}` : ""}`}
         >
+          {plane === "gateway" ? (
+            <div className="mb-4 flex justify-end">
+              <button
+                className="rounded-full border border-[var(--vx-border-subtle)] bg-white/80 px-4 py-2 text-sm font-medium text-[var(--vx-text-primary)] shadow-sm transition hover:border-[var(--vx-accent)]"
+                type="button"
+                onClick={() => {
+                  void loadHistory();
+                }}
+              >
+                同步历史
+              </button>
+            </div>
+          ) : null}
           <div className="space-y-3">
             {state.chatMessages.map((message) => (
               <StreamBubble key={message.id} text={`${message.role === "user" ? "用户" : "助手"}：${message.text}`} />

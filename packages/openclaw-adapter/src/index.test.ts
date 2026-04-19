@@ -242,6 +242,27 @@ describe("OpenClawGatewaySource", () => {
               },
             }),
           );
+          return;
+        }
+        if (request.method === "chat.history") {
+          socket.send(
+            JSON.stringify({
+              type: "res",
+              id: request.id,
+              ok: true,
+              payload: {
+                items: [
+                  {
+                    id: "message-1",
+                    role: "assistant",
+                    text: "历史消息",
+                  },
+                ],
+                cursor: null,
+                echoed: request.params,
+              },
+            }),
+          );
         }
       });
     });
@@ -276,6 +297,40 @@ describe("OpenClawGatewaySource", () => {
       echoed: {
         sessionKey: "session-1",
         message: { text: "整理本周日报" },
+      },
+    });
+
+    const pendingRawHistoryRequest = waitForMessage(liveSocket);
+    const history = await source.request?.(
+      "chat.history",
+      {
+        sessionKey: "session-1",
+        limit: 20,
+        beforeSeq: 42,
+      },
+      { workspaceId: "workspace-1" },
+    );
+    const rawHistoryRequest = await pendingRawHistoryRequest;
+
+    expect(rawHistoryRequest.method).toBe("chat.history");
+    expect(rawHistoryRequest.params).toMatchObject({
+      sessionKey: "session-1",
+      limit: 20,
+      beforeSeq: 42,
+    });
+    expect(history).toMatchObject({
+      items: [
+        {
+          id: "message-1",
+          role: "assistant",
+          text: "历史消息",
+        },
+      ],
+      cursor: null,
+      echoed: {
+        sessionKey: "session-1",
+        limit: 20,
+        beforeSeq: 42,
       },
     });
   });

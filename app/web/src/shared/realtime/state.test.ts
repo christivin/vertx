@@ -26,4 +26,32 @@ describe("realtimeReducer", () => {
     expect(state.lastError).toContain("恢复");
     expect(state.chatLoading).toBe(true);
   });
+
+  it("hydrates messages from chat history after recovery", () => {
+    const recovering = realtimeReducer(initialRealtimeState, {
+      type: "recover.start",
+      reason: "检测到事件序列缺口，正在恢复…",
+    });
+    const state = realtimeReducer(recovering, {
+      type: "history.loaded",
+      messages: [
+        {
+          id: "history-1",
+          role: "assistant",
+          text: "已从 chat.history 恢复的历史回答",
+        },
+      ],
+    });
+
+    expect(state.connectionStatus).toBe("connected");
+    expect(state.chatLoading).toBe(false);
+    expect(state.lastError).toBeNull();
+    expect(state.chatMessages).toEqual([
+      {
+        id: "history-1",
+        role: "assistant",
+        text: "已从 chat.history 恢复的历史回答",
+      },
+    ]);
+  });
 });
