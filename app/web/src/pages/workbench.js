@@ -1,8 +1,0 @@
-import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { mockWorkbench, mockWorkflows } from "@/shared/api/mock-data";
-import { PageHeader } from "@/shared/ui/page-header";
-import { SectionCard } from "@/shared/ui/section-card";
-import { TaskComposer } from "@/shared/ui/task-composer";
-export function WorkbenchPage() {
-    return (_jsxs("div", { className: "space-y-6", children: [_jsx(PageHeader, { title: "\u5DE5\u4F5C\u53F0", description: "\u4ECE\u8FD9\u91CC\u53D1\u8D77\u6D41\u7A0B\u3001\u8FFD\u8E2A\u6700\u8FD1\u8FD0\u884C\uFF0C\u5E76\u89C2\u5BDF\u98DE\u4E66\u5165\u53E3\u5065\u5EB7\u5EA6\u3002" }), _jsx(TaskComposer, {}), _jsxs("div", { className: "grid gap-4 lg:grid-cols-4", children: [_jsx(SectionCard, { title: "\u5F85\u5904\u7406\u5BA1\u6279", children: mockWorkbench.pendingApprovals }), _jsx(SectionCard, { title: "\u6700\u8FD1\u8FD0\u884C", children: mockWorkbench.recentRuns }), _jsx(SectionCard, { title: "\u6700\u8FD1\u4F1A\u8BDD", children: mockWorkbench.recentSessions }), _jsx(SectionCard, { title: "\u5DF2\u63A5\u5165\u901A\u9053", children: mockWorkbench.connectedChannels })] }), _jsx(SectionCard, { title: "\u5FEB\u6377\u6D41\u7A0B\u5165\u53E3", eyebrow: "Quick Start", children: _jsx("div", { className: "grid gap-4 md:grid-cols-2", children: mockWorkflows.map((workflow) => (_jsxs("div", { className: "rounded-[20px] bg-surface-3 p-4", children: [_jsx("p", { className: "font-medium", children: workflow.name }), _jsx("p", { className: "mt-1 text-sm text-text-muted", children: "\u9002\u5408\u4ECE Web \u6216\u98DE\u4E66\u76F4\u63A5\u89E6\u53D1\u3002" })] }, workflow.id))) }) })] }));
-}
