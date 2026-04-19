@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createProductApiStore } from "./index";
+import { createInMemoryProductApiRepository, createProductApiStore } from "./index";
 
 describe("createProductApiStore", () => {
   it("keeps workbench summary derived from runs, sessions, and connected channels", () => {
@@ -67,6 +67,20 @@ describe("createProductApiStore", () => {
     });
     expect(store.listAuditEvents()[0]).toMatchObject({
       action: "settings.updated",
+    });
+  });
+
+  it("can run against an injected repository boundary", () => {
+    const repository = createInMemoryProductApiRepository();
+    const store = createProductApiStore(repository);
+
+    store.createWorkflow({ name: "外部仓储流程" });
+
+    expect(repository.listWorkflows()[0]).toMatchObject({
+      name: "外部仓储流程",
+    });
+    expect(repository.listAuditEvents()[0]).toMatchObject({
+      action: "workflow.created",
     });
   });
 });

@@ -37,11 +37,12 @@
 - `shared/api` 已覆盖首批固定 Product API 接口，包含 workflow/run/session detail 与 workflow/run/settings/feishu mutation
 - `WorkflowDetailPage` 与 `RunDetailPage` 已接入 Product API query，不再停留在纯骨架或硬编码状态
 - `packages/domain` 已承接 Product API 的 workflow/run/session/connection/settings/audit 状态演进，Product API server 不再直接持有领域状态逻辑
+- `packages/domain` 已补齐 `ProductApiRepository` 与内存仓储实现，Store 依赖仓储接口而不是裸 state
 - `SessionDetailPage` 已改为“优先连接 realtime gateway，失败时回退 mock frames”
 
 当前仍未完成但方向已固定：
 
-- Product API 已具备可运行服务入口与 Domain Store，但 Domain Store 背后仍是内存 mock state，还没有接真实持久化、OpenClaw session/run 镜像或飞书配置
+- Product API 已具备可运行服务入口、Domain Store 与 Repository 边界，但当前仓储实现仍是内存 mock state，还没有接真实持久化、OpenClaw session/run 镜像或飞书配置
 - OpenClaw remote source 已打通最小握手、事件归一、请求透传与 env 化运行时配置，但还没有接入真实业务鉴权与部署环境
 - `chat.history`、`approval`、`sessions.changed` 等方法/事件还只是协议留位，没有完整业务后端
 
@@ -297,7 +298,8 @@ app/web/src
   - 前端 API client 已覆盖首批固定接口，包括 workflow/run mutation、settings update 与 Feishu connect
   - 已完成 `packages/product-api-server` mock-backed 运行时，覆盖 health、CORS、核心 GET 路由与基础 POST/PUT mutation
   - 已完成 `packages/domain` 的 Product API Store，Product API server 已从“持有状态”收敛为“HTTP 路由 + Domain 调用”
-  - 下一步是把 Domain Store 背后的内存 mock state 替换为持久化 Repository，并接入 OpenClaw session/run 镜像
+  - 已完成 `ProductApiRepository` 接口与内存仓储实现，Domain Store 已可注入仓储边界
+  - 下一步是把内存 Repository 替换为持久化 Repository，并接入 OpenClaw session/run 镜像
 
 ### 阶段 5：飞书闭环
 
@@ -308,7 +310,7 @@ app/web/src
 - 前端工程可本地启动
 - 静态页面骨架完整
 - mock realtime 可以看到流式输出与 tool 状态变化
-- contracts、adapter、domain、api 都具备最小代码骨架，其中 domain 已承接 Product API 的状态演进逻辑
+- contracts、adapter、domain、api 都具备最小代码骨架，其中 domain 已承接 Product API 的状态演进逻辑与 Repository 边界
 - 文档中已明确：
   - Vertagent 负责视觉与模块参考
   - OpenClaw 负责实时状态机制参考
