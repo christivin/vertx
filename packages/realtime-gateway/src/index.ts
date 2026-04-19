@@ -3,6 +3,8 @@ import type { IncomingMessage, Server as HttpServer } from "node:http";
 import type { Socket as NetSocket } from "node:net";
 import { WebSocketServer, type RawData, type WebSocket } from "ws";
 import {
+  createOpenClawGatewaySource,
+  type OpenClawGatewaySourceOptions,
   RealtimeBridgeAdapter,
   type RealtimeBridgeContext,
   type RealtimeBridgeSource,
@@ -62,6 +64,10 @@ export type RealtimeGatewayOptions = {
   }) => Promise<unknown> | unknown;
   resolveContext?: (request: IncomingMessage) => Partial<RealtimeBridgeContext>;
   recordAudit?: (entry: RealtimeGatewayAuditEntry) => void;
+};
+
+export type OpenClawBackedRealtimeGatewayOptions = Omit<RealtimeGatewayOptions, "source"> & {
+  openclaw: OpenClawGatewaySourceOptions;
 };
 
 export type RealtimeGatewayServer = {
@@ -313,4 +319,14 @@ export function createRealtimeGatewayServer(options: RealtimeGatewayOptions): Re
       });
     },
   };
+}
+
+export function createOpenClawBackedRealtimeGatewayServer(
+  options: OpenClawBackedRealtimeGatewayOptions,
+): RealtimeGatewayServer {
+  const source = createOpenClawGatewaySource(options.openclaw);
+  return createRealtimeGatewayServer({
+    ...options,
+    source,
+  });
 }

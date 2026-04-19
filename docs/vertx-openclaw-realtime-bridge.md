@@ -55,6 +55,9 @@ Vertx 当前选择的 realtime 接入路线是：
 - `packages/openclaw-adapter/src/index.ts`
   - `OpenClawGatewaySource`
   - `RealtimeBridgeAdapter`
+- `packages/realtime-gateway/src/index.ts`
+  - `createRealtimeGatewayServer`
+  - `createOpenClawBackedRealtimeGatewayServer`
 
 其中：
 
@@ -66,6 +69,9 @@ Vertx 当前选择的 realtime 接入路线是：
 - `RealtimeBridgeAdapter`
   - 负责把 source 事件注入 Vertx workspace / tenant / user 上下文
   - 负责输出 Vertx 对前端稳定的 event frame
+- `createOpenClawBackedRealtimeGatewayServer`
+  - 负责把 `OpenClawGatewaySource` 与 Vertx websocket server 组装成可直接启动的 realtime gateway
+  - 降低后续在 BFF / runtime 容器里手工拼装 source 的重复工作
 
 ## 5. 事件归一策略
 

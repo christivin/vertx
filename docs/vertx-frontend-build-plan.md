@@ -30,6 +30,7 @@
 - `packages/openclaw-adapter` 已补齐 `RealtimeBridgeAdapter` 的上下文注入与事件归一能力
 - `packages/openclaw-adapter` 已补齐 `OpenClawGatewaySource`，可直接消费 OpenClaw gateway websocket 协议
 - `packages/realtime-gateway` 已具备最小 websocket server、事件广播、请求转发与测试
+- `packages/realtime-gateway` 已补齐 `createOpenClawBackedRealtimeGatewayServer` 组装入口
 - `SessionDetailPage` 已改为“优先连接 realtime gateway，失败时回退 mock frames”
 
 当前仍未完成但方向已固定：
