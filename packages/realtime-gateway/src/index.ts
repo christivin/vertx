@@ -298,6 +298,7 @@ export function createRealtimeGatewayServer(options: RealtimeGatewayOptions): Re
       if (typeof unsubscribe === "function") {
         unsubscribe();
       }
+      await options.source?.close?.();
       if (options.server && upgradeHandler) {
         options.server.off("upgrade", upgradeHandler);
       }

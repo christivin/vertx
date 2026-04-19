@@ -4,9 +4,16 @@
   "type": "module",
   "exports": "./src/index.ts",
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --environment node"
   },
   "dependencies": {
-    "@vertx/realtime-gateway-contracts": "workspace:*"
+    "@vertx/realtime-gateway-contracts": "workspace:*",
+    "ws": "^8.20.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.8.1",
+    "@types/ws": "^8.18.1",
+    "vitest": "^3.2.4"
   }
 }

@@ -111,3 +111,9 @@ Vertx 后续实现必须遵守：
 - 把 `openclaw` 的真实 gateway / runtime 事件接进 `RealtimeBridgeAdapter`
 - 为 `chat.history`、`chat.send`、`tool stream`、`sessions.changed` 建更多契约测试
 - 在真正修改 `openclaw/` 核心路径之前，先把拟修改入口点和 patch 分类记录到 `ops/upstream/openclaw-mods.md`
+
+补充说明：
+
+- 当前已在 Vertx 自身的 `packages/openclaw-adapter` 内实现 `OpenClawGatewaySource`
+- 这属于 Vertx 适配层能力，不属于对 `openclaw/` 基座源码的正式 patch
+- 对当前 bridge 设计与事件映射的详细说明，见 `docs/vertx-openclaw-realtime-bridge.md`
