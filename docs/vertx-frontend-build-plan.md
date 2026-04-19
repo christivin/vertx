@@ -32,6 +32,7 @@
 - `packages/realtime-gateway` 已具备最小 websocket server、事件广播、请求转发与测试
 - `packages/realtime-gateway` 已补齐 `createOpenClawBackedRealtimeGatewayServer` 组装入口
 - `packages/realtime-gateway-server` 已补齐可启动的 runtime 入口，支持 env 配置、固定 path、health check 与优雅关闭
+- `shared/api` 已补齐 `ProductApiClient + React Query hooks` 基线，列表页优先读 Product API，失败时回退 mock
 - `SessionDetailPage` 已改为“优先连接 realtime gateway，失败时回退 mock frames”
 
 当前仍未完成但方向已固定：
@@ -285,6 +286,10 @@ app/web/src
 
 - 打通 `workbench / workflows / runs / sessions / connections / settings`
 - 页面接入真实 Product API
+- 当前状态：
+  - 已完成前端侧 `ProductApiClient`、query hooks 与 mock fallback
+  - `workbench / workflows / sessions / connections / settings / audit` 已不再直接耦合 `mock-data`
+  - 下一步是补 Vertx Product API 运行时与 DTO/路由的真实返回
 
 ### 阶段 5：飞书闭环
 

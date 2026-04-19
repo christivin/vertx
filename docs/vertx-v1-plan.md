@@ -278,6 +278,7 @@ Vertx 前端固定采用双链路：
 - `app/web` 已建立独立前端骨架，不复用 `openclaw/ui` 的 Lit 控制台
 - `packages/realtime-gateway-contracts`、`packages/openclaw-adapter`、`packages/realtime-gateway` 已落最小可运行代码
 - `packages/realtime-gateway-server` 已可独立启动，前端可通过固定 websocket path 直接连接
+- `app/web/shared/api` 已具备 Product API client、query hooks 与 mock fallback 基线
 - `会话详情` 已优先接 realtime gateway，而不是依赖 controller 聚合文本
 - 当前已进入“前端 realtime 基线已通、runtime 真桥接可独立启动”的阶段
 
