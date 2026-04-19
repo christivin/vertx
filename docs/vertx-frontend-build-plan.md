@@ -31,12 +31,13 @@
 - `packages/openclaw-adapter` 已补齐 `OpenClawGatewaySource`，可直接消费 OpenClaw gateway websocket 协议
 - `packages/realtime-gateway` 已具备最小 websocket server、事件广播、请求转发与测试
 - `packages/realtime-gateway` 已补齐 `createOpenClawBackedRealtimeGatewayServer` 组装入口
+- `packages/realtime-gateway-server` 已补齐可启动的 runtime 入口，支持 env 配置、固定 path、health check 与优雅关闭
 - `SessionDetailPage` 已改为“优先连接 realtime gateway，失败时回退 mock frames”
 
 当前仍未完成但方向已固定：
 
 - Product API 仍主要是 mock data
-- OpenClaw remote source 已打通最小握手、事件归一与请求透传，但还没有接入真实运行环境配置
+- OpenClaw remote source 已打通最小握手、事件归一、请求透传与 env 化运行时配置，但还没有接入真实业务鉴权与部署环境
 - `chat.history`、`approval`、`sessions.changed` 等方法/事件还只是协议留位，没有完整业务后端
 
 ## 2. 双链路架构
@@ -277,7 +278,8 @@ app/web/src
   - 已完成独立 `packages/realtime-gateway`
   - 已具备 hello、event broadcast、request/response 最小能力与测试
   - 已具备 `OpenClawGatewaySource` 最小握手、事件归一、请求透传能力
-  - 下一步是把真实运行环境中的 `openclaw` gateway 配置接入，并补更多契约测试
+  - 已完成 `packages/realtime-gateway-server`，支持 env 配置、固定 websocket path、health check、优雅关闭
+  - 下一步是把真实运行环境中的 `openclaw` gateway 鉴权来源、Product API 与飞书链路接入，并补更多契约测试
 
 ### 阶段 4：Product API
 

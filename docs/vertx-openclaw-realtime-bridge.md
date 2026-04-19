@@ -58,6 +58,10 @@ Vertx 当前选择的 realtime 接入路线是：
 - `packages/realtime-gateway/src/index.ts`
   - `createRealtimeGatewayServer`
   - `createOpenClawBackedRealtimeGatewayServer`
+- `packages/realtime-gateway-server/src/index.ts`
+  - `loadRealtimeGatewayServerConfig`
+  - `startRealtimeGatewayServer`
+  - `runRealtimeGatewayServer`
 
 其中：
 
@@ -72,6 +76,10 @@ Vertx 当前选择的 realtime 接入路线是：
 - `createOpenClawBackedRealtimeGatewayServer`
   - 负责把 `OpenClawGatewaySource` 与 Vertx websocket server 组装成可直接启动的 realtime gateway
   - 降低后续在 BFF / runtime 容器里手工拼装 source 的重复工作
+- `packages/realtime-gateway-server`
+  - 负责读取 env 配置并启动 HTTP + WebSocket 进程
+  - 固定暴露 websocket path 与 health check
+  - 作为前端与后续飞书/后端联调时的实际入口
 
 ## 5. 事件归一策略
 
@@ -123,22 +131,52 @@ Vertx 前端当前的 session 页和 run 页则需要更稳定的产品态字段
 - 能自动获取 snapshot
 - 能把 OpenClaw chat/tool/approval 事件归一为 Vertx 事件
 - 能透传 `chat.send`
+- `createRealtimeGatewayServer` 已补齐 standalone 模式的 path 约束
+- `packages/realtime-gateway-server` 已能以 env 配置启动可监听的 realtime 进程
+- 已验证正确 path 可收到 hello，错误 path 无法建立连接，health check 可返回存活状态
 
 对应测试位于：
 
 - `packages/openclaw-adapter/src/index.test.ts`
+- `packages/realtime-gateway/src/index.test.ts`
+- `packages/realtime-gateway-server/src/index.test.ts`
 
-## 8. 仍未完成的部分
+## 8. 当前运行方式
+
+当前已具备本地运行入口：
+
+- 根命令：
+  - `pnpm dev:realtime`
+  - `pnpm start:realtime`
+- 核心环境变量：
+  - `VERTX_WORKSPACE_ID`
+  - `OPENCLAW_GATEWAY_URL`
+  - `VERTX_REALTIME_HOST`
+  - `VERTX_REALTIME_PORT`
+  - `VERTX_REALTIME_PATH`
+  - `VERTX_REALTIME_HEALTH_PATH`
+  - `OPENCLAW_GATEWAY_TOKEN` / `OPENCLAW_GATEWAY_PASSWORD`
+  - `OPENCLAW_GATEWAY_ROLE`
+  - `OPENCLAW_GATEWAY_SCOPES`
+  - `OPENCLAW_GATEWAY_CAPS`
+
+默认约定：
+
+- websocket path 默认是 `/realtime`
+- health check 默认是 `/healthz`
+- 前端通过 `VITE_VERTX_REALTIME_URL` 指向 Vertx Realtime Gateway，而不是直接连 OpenClaw
+
+## 9. 仍未完成的部分
 
 当前 bridge 还不是最终形态，后续还需要继续推进：
 
-- 真正接入运行中的 OpenClaw gateway 配置与鉴权来源
+- 把当前 env 化配置接入真实部署环境与鉴权来源管理，而不是只停留在本地启动
 - 为 `chat.history` 建立更完整的契约测试
 - 为 `sessions.changed / session.message / approval / tool stream` 建端到端集成测试
 - 把前端 `SessionDetailPage` 从 mock/gateway 选择，进一步推进到真实 OpenClaw source 驱动
 - 决定是否需要补 `presence / health / tick` 的归一策略
 
-## 9. 对 OpenClaw 源码的当前判断
+## 10. 对 OpenClaw 源码的当前判断
 
 截至当前阶段：
 
@@ -150,11 +188,12 @@ Vertx 前端当前的 session 页和 run 页则需要更稳定的产品态字段
   - `openclaw/src/gateway/server-broadcast.ts`
   - `openclaw/src/gateway/server-methods/chat.ts`
 
-## 10. 当前阶段结论
+## 11. 当前阶段结论
 
 当前可以明确写死：
 
 - Vertx 已从“mock realtime 原型”进入“可消费真实 OpenClaw websocket 协议”的阶段
+- Vertx 已从“只有库级 bridge”进入“bridge 可独立启动并提供固定 path/health 的阶段”
 - OpenClaw 仍然是 Vertx 的 runtime 基座
 - Vertx 前端不直接依赖 OpenClaw UI
 - Vertx 通过 adapter 层吸收 OpenClaw realtime 能力，而不是把产品层耦合进 OpenClaw 内部目录

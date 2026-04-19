@@ -34,6 +34,31 @@ function waitForOpen(socket: WebSocket) {
   });
 }
 
+function waitForClose(socket: WebSocket) {
+  return new Promise<number>((resolve, reject) => {
+    socket.once("close", (code) => resolve(code));
+    socket.once("error", reject);
+  });
+}
+
+function waitForFailedConnection(socket: WebSocket) {
+  return new Promise<"close" | "error">((resolve) => {
+    const finish = (outcome: "close" | "error") => {
+      socket.off("close", handleClose);
+      socket.off("error", handleError);
+      if (socket.readyState !== WebSocket.CLOSED && socket.readyState !== WebSocket.CLOSING) {
+        socket.terminate();
+      }
+      resolve(outcome);
+    };
+    const handleClose = () => finish("close");
+    const handleError = () => finish("error");
+
+    socket.once("close", handleClose);
+    socket.once("error", handleError);
+  });
+}
+
 const servers: Array<ReturnType<typeof createRealtimeGatewayServer>> = [];
 const sockets: WebSocket[] = [];
 const upstreamServers: WebSocketServer[] = [];
@@ -43,7 +68,15 @@ afterEach(async () => {
     sockets.splice(0).map(
       (socket) =>
         new Promise<void>((resolve) => {
+          if (socket.readyState === WebSocket.CLOSED) {
+            resolve();
+            return;
+          }
           socket.once("close", () => resolve());
+          if (socket.readyState === WebSocket.CONNECTING) {
+            socket.terminate();
+            return;
+          }
           socket.close();
         }),
     ),
@@ -155,6 +188,32 @@ describe("createRealtimeGatewayServer", () => {
         workspaceId: "workspace-2",
       },
     });
+  });
+
+  it("enforces the configured path for standalone websocket mode", async () => {
+    const server = createRealtimeGatewayServer({
+      workspaceId: "workspace-path",
+      path: "/gateway/realtime",
+    });
+    servers.push(server);
+
+    const address = server.address();
+    if (!address || typeof address === "string") {
+      throw new Error("expected an inet websocket address");
+    }
+
+    const goodSocket = new WebSocket(`ws://127.0.0.1:${address.port}/gateway/realtime`);
+    sockets.push(goodSocket);
+    const goodHelloPromise = nextFrame(goodSocket);
+    await waitForOpen(goodSocket);
+    const goodHello = await goodHelloPromise;
+    expect(goodHello.type).toBe("hello");
+
+    const badSocket = new WebSocket(`ws://127.0.0.1:${address.port}/wrong-path`);
+    sockets.push(badSocket);
+    await expect(waitForFailedConnection(badSocket)).resolves.toSatisfy((outcome) =>
+      ["close", "error"].includes(outcome),
+    );
   });
 
   it("relays normalized openclaw gateway events through a composed server factory", async () => {

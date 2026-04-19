@@ -118,6 +118,7 @@ export function createRealtimeGatewayServer(options: RealtimeGatewayOptions): Re
     : new WebSocketServer({
         host: options.host,
         port: options.port ?? 0,
+        path: options.path,
       });
 
   const baseContext: RealtimeBridgeContext = {
