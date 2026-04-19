@@ -1,6 +1,7 @@
 import { createServer as createHttpServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { pathToFileURL } from "node:url";
 import { createProductApiStore, type CreateWorkflowInput, type UpdateSettingsInput } from "@vertx/domain";
+import { createFileProductApiRepository } from "./file-repository";
 
 export type ProductApiServerConfig = {
   host: string;
@@ -9,6 +10,7 @@ export type ProductApiServerConfig = {
   healthPath: string;
   workspaceId: string;
   serverVersion: string;
+  stateFilePath?: string;
 };
 
 export type ProductApiRuntime = {
@@ -127,6 +129,7 @@ export function loadProductApiServerConfig(env: NodeJS.ProcessEnv = process.env)
     healthPath: normalizePath(env.VERTX_API_HEALTH_PATH, DEFAULT_HEALTH_PATH),
     workspaceId: readRequiredEnv(env, "VERTX_WORKSPACE_ID", DEFAULT_WORKSPACE_ID),
     serverVersion: env.VERTX_API_SERVER_VERSION?.trim() || DEFAULT_SERVER_VERSION,
+    stateFilePath: env.VERTX_API_STATE_FILE?.trim() || undefined,
   };
 }
 
@@ -134,7 +137,9 @@ export async function startProductApiServer(
   config: ProductApiServerConfig,
   logger: Logger = console,
 ): Promise<ProductApiRuntime> {
-  const store = createProductApiStore();
+  const store = createProductApiStore(
+    config.stateFilePath ? createFileProductApiRepository(config.stateFilePath) : undefined,
+  );
 
   const httpServer = createHttpServer(async (request, response) => {
     const url = new URL(request.url ?? "/", "http://localhost");

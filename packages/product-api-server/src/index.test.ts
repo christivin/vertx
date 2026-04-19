@@ -19,6 +19,7 @@ describe("loadProductApiServerConfig", () => {
       VERTX_API_BASE_PATH: "gateway/api/",
       VERTX_API_HEALTH_PATH: "ready",
       VERTX_API_SERVER_VERSION: "0.4.0",
+      VERTX_API_STATE_FILE: "/tmp/vertx-state.json",
     });
 
     expect(config).toMatchObject({
@@ -28,6 +29,7 @@ describe("loadProductApiServerConfig", () => {
       healthPath: "/ready",
       workspaceId: "workspace-api",
       serverVersion: "0.4.0",
+      stateFilePath: "/tmp/vertx-state.json",
     });
   });
 

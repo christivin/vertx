@@ -38,11 +38,12 @@
 - `WorkflowDetailPage` 与 `RunDetailPage` 已接入 Product API query，不再停留在纯骨架或硬编码状态
 - `packages/domain` 已承接 Product API 的 workflow/run/session/connection/settings/audit 状态演进，Product API server 不再直接持有领域状态逻辑
 - `packages/domain` 已补齐 `ProductApiRepository` 与内存仓储实现，Store 依赖仓储接口而不是裸 state
+- `packages/product-api-server` 已补齐 JSON 文件持久化 Repository，可通过 `VERTX_API_STATE_FILE` 启用本地持久化
 - `SessionDetailPage` 已改为“优先连接 realtime gateway，失败时回退 mock frames”
 
 当前仍未完成但方向已固定：
 
-- Product API 已具备可运行服务入口、Domain Store 与 Repository 边界，但当前仓储实现仍是内存 mock state，还没有接真实持久化、OpenClaw session/run 镜像或飞书配置
+- Product API 已具备可运行服务入口、Domain Store、Repository 边界与本地 JSON 文件持久化基线，但还没有接生产级持久化、OpenClaw session/run 镜像或飞书真实配置
 - OpenClaw remote source 已打通最小握手、事件归一、请求透传与 env 化运行时配置，但还没有接入真实业务鉴权与部署环境
 - `chat.history`、`approval`、`sessions.changed` 等方法/事件还只是协议留位，没有完整业务后端
 
@@ -299,7 +300,8 @@ app/web/src
   - 已完成 `packages/product-api-server` mock-backed 运行时，覆盖 health、CORS、核心 GET 路由与基础 POST/PUT mutation
   - 已完成 `packages/domain` 的 Product API Store，Product API server 已从“持有状态”收敛为“HTTP 路由 + Domain 调用”
   - 已完成 `ProductApiRepository` 接口与内存仓储实现，Domain Store 已可注入仓储边界
-  - 下一步是把内存 Repository 替换为持久化 Repository，并接入 OpenClaw session/run 镜像
+  - 已完成 `packages/product-api-server` 的 JSON 文件 Repository，可通过 `VERTX_API_STATE_FILE` 持久化 workflow/run/settings/audit 等状态
+  - 下一步是接入 OpenClaw session/run 镜像，并把本地 JSON 文件持久化替换或扩展为生产级 Repository
 
 ### 阶段 5：飞书闭环
 

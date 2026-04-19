@@ -284,6 +284,7 @@ Vertx 前端固定采用双链路：
 - `packages/product-api-server` 已具备 mock-backed Product API 运行时，可承接前端 `VITE_VERTX_API_BASE_URL`
 - `packages/domain` 已承接 Product API 的领域状态与动作，Product API server 已收敛为 HTTP 路由层
 - `packages/domain` 已补齐 `ProductApiRepository` 仓储接口与内存实现，为后续持久化和 OpenClaw 镜像留出替换点
+- `packages/product-api-server` 已补齐 JSON 文件持久化 Repository，可通过 `VERTX_API_STATE_FILE` 启用本地状态持久化
 - `WorkflowDetailPage` 与 `RunDetailPage` 已接入 Product API query
 - `会话详情` 已优先接 realtime gateway，而不是依赖 controller 聚合文本
 - 当前已进入“前端 realtime 基线已通、runtime 真桥接可独立启动”的阶段
@@ -417,7 +418,7 @@ Vertx 前端固定采用双链路：
 - 本地可通过 `VERTX_WORKSPACE_ID`、`OPENCLAW_GATEWAY_URL`、`VERTX_REALTIME_PATH` 等环境变量启动
 - Realtime 侧已经从“协议与库”推进到“可启动服务”，Product API 也从“前端 mock fallback”推进到“mock-backed 服务”
 - 前端 Product API client 已覆盖首批固定接口，详情页可直接消费 Product Data Plane
-- Domain 层已经承接 Product API 状态演进与 Repository 边界，后续重点转向持久化 Repository、OpenClaw run/session 镜像与飞书触发闭环
+- Domain 层已经承接 Product API 状态演进与 Repository 边界，Product API server 已具备本地 JSON 文件持久化；后续重点转向 OpenClaw run/session 镜像、生产级 Repository 与飞书触发闭环
 
 ## 阶段 4：产品化补强
 
