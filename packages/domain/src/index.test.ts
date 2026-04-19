@@ -181,4 +181,37 @@ describe("createProductApiStore", () => {
       action: "runtime.tool.failed",
     });
   });
+
+  it("mirrors approval events into workbench counters and audit events", () => {
+    const repository = createInMemoryProductApiRepository();
+    const initialPendingApprovals = repository.getWorkbenchState().pendingApprovals;
+
+    mirrorRealtimeEventToProductApiRepository(repository, {
+      event: "approval.requested",
+      payload: {
+        approvalId: "approval-openclaw-1",
+        title: "允许执行飞书文档写入",
+      },
+    });
+
+    expect(repository.getWorkbenchState().pendingApprovals).toBe(initialPendingApprovals + 1);
+    expect(repository.listAuditEvents()[0]).toMatchObject({
+      action: "runtime.approval.requested.approval-openclaw-1",
+      level: "warning",
+    });
+
+    mirrorRealtimeEventToProductApiRepository(repository, {
+      event: "approval.resolved",
+      payload: {
+        approvalId: "approval-openclaw-1",
+        approved: true,
+      },
+    });
+
+    expect(repository.getWorkbenchState().pendingApprovals).toBe(initialPendingApprovals);
+    expect(repository.listAuditEvents()[0]).toMatchObject({
+      action: "runtime.approval.resolved.approval-openclaw-1",
+      level: "info",
+    });
+  });
 });

@@ -301,10 +301,11 @@ app/web/src
   - 已完成 `packages/domain` 的 Product API Store，Product API server 已从“持有状态”收敛为“HTTP 路由 + Domain 调用”
   - 已完成 `ProductApiRepository` 接口与内存仓储实现，Domain Store 已可注入仓储边界
   - 已完成 `packages/product-api-server` 的 JSON 文件 Repository，可通过 `VERTX_API_STATE_FILE` 持久化 workflow/run/settings/audit 等状态
-  - 已完成 `mirrorRealtimeEventToProductApiRepository`，可把 `run.status / chat / session.message / sessions.changed / tool.status` 镜像为 Product API 的 run、session 与 audit 状态
+  - 已完成 `mirrorRealtimeEventToProductApiRepository`，可把 `run.status / chat / session.message / sessions.changed / tool.status / approval.requested / approval.resolved` 镜像为 Product API 的 run、session、workbench 与 audit 状态
   - JSON 文件 Repository 已补齐 mirror 所需的 `upsertRun / upsertSession` 持久化能力
   - 已在 `packages/product-api-server` 增加可选 realtime mirror client，可通过 `VERTX_REALTIME_MIRROR_URL` 订阅 Vertx Realtime Gateway，并在同一个 Repository 实例中写入 live run/session 镜像
   - 该设计固定 Product API server 为产品状态 owner，避免 realtime server 与 API server 多进程同时写同一个 JSON state file
+  - approval mirror 已可驱动工作台待审批计数与 warning/info 审计事件，为后续流程审批点打基础
   - 下一步是把本地 JSON 文件持久化替换或扩展为生产级 Repository，并在真实 OpenClaw / 飞书触发链路下验证 mirror
 
 ### 阶段 5：飞书闭环

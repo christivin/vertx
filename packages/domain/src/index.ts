@@ -66,7 +66,14 @@ export type ProductApiRepository = {
 };
 
 export type ProductApiMirrorEvent = {
-  event: "chat" | "session.message" | "sessions.changed" | "run.status" | "tool.status";
+  event:
+    | "chat"
+    | "session.message"
+    | "sessions.changed"
+    | "run.status"
+    | "tool.status"
+    | "approval.requested"
+    | "approval.resolved";
   payload: unknown;
 };
 
@@ -301,6 +308,41 @@ function sessionIdFromPayload(payload: Record<string, unknown>) {
   return stringField(payload, ["sessionKey", "sessionId", "id", "key"]);
 }
 
+function approvalIdFromPayload(payload: Record<string, unknown>) {
+  return stringField(payload, ["approvalId", "id", "toolCallId", "requestId"]);
+}
+
+function mirrorApprovalRequest(repository: ProductApiRepository, payload: Record<string, unknown>) {
+  const workbench = repository.getWorkbenchState();
+  const approvalId = approvalIdFromPayload(payload);
+  repository.setWorkbenchState({
+    ...workbench,
+    pendingApprovals: workbench.pendingApprovals + 1,
+  });
+  repository.prependAuditEvent(
+    buildAuditEvent(
+      repository.listAuditEvents().length + 1,
+      `runtime.approval.requested${approvalId ? `.${approvalId}` : ""}`,
+      "warning",
+    ),
+  );
+}
+
+function mirrorApprovalResolved(repository: ProductApiRepository, payload: Record<string, unknown>) {
+  const workbench = repository.getWorkbenchState();
+  const approvalId = approvalIdFromPayload(payload);
+  repository.setWorkbenchState({
+    ...workbench,
+    pendingApprovals: Math.max(0, workbench.pendingApprovals - 1),
+  });
+  repository.prependAuditEvent(
+    buildAuditEvent(
+      repository.listAuditEvents().length + 1,
+      `runtime.approval.resolved${approvalId ? `.${approvalId}` : ""}`,
+    ),
+  );
+}
+
 function mirrorRun(
   repository: ProductApiRepository,
   input: {
@@ -441,6 +483,16 @@ export function mirrorRealtimeEventToProductApiRepository(
     repository.prependAuditEvent(
       buildAuditEvent(repository.listAuditEvents().length + 1, `runtime.tool.${phase ?? "unknown"}`),
     );
+    return;
+  }
+
+  if (event.event === "approval.requested") {
+    mirrorApprovalRequest(repository, event.payload);
+    return;
+  }
+
+  if (event.event === "approval.resolved") {
+    mirrorApprovalResolved(repository, event.payload);
   }
 }
 

@@ -23,6 +23,8 @@ const MIRROR_EVENTS = new Set<ProductApiMirrorEvent["event"]>([
   "sessions.changed",
   "run.status",
   "tool.status",
+  "approval.requested",
+  "approval.resolved",
 ]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {

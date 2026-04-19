@@ -235,18 +235,31 @@ describe("startProductApiServer", () => {
         },
       }),
     );
+    realtimeSocket.send(
+      JSON.stringify({
+        type: "event",
+        event: "approval.requested",
+        seq: 3,
+        payload: {
+          approvalId: "approval-live-1",
+          title: "允许发送飞书回执",
+        },
+      }),
+    );
 
     await expectEventually(
       async () => {
-        const [runResponse, sessionResponse] = await Promise.all([
+        const [runResponse, sessionResponse, workbenchResponse] = await Promise.all([
           fetch(`${runtime.url}/runs/oc-run-live-1`),
           fetch(`${runtime.url}/sessions/oc-session-live-1`),
+          fetch(`${runtime.url}/workbench/summary`),
         ]);
         return {
           runStatus: runResponse.status,
           run: runResponse.status === 200 ? await runResponse.json() : null,
           sessionStatus: sessionResponse.status,
           session: sessionResponse.status === 200 ? await sessionResponse.json() : null,
+          workbench: await workbenchResponse.json(),
         };
       },
       (value) => {
@@ -259,6 +272,33 @@ describe("startProductApiServer", () => {
         expect(value.session).toMatchObject({
           id: "oc-session-live-1",
           messageCount: 1,
+        });
+        expect(value.workbench).toMatchObject({
+          pendingApprovals: 3,
+        });
+      },
+    );
+
+    realtimeSocket.send(
+      JSON.stringify({
+        type: "event",
+        event: "approval.resolved",
+        seq: 4,
+        payload: {
+          approvalId: "approval-live-1",
+          approved: true,
+        },
+      }),
+    );
+
+    await expectEventually(
+      async () => {
+        const response = await fetch(`${runtime.url}/workbench/summary`);
+        return await response.json();
+      },
+      (workbench) => {
+        expect(workbench).toMatchObject({
+          pendingApprovals: 2,
         });
       },
     );

@@ -285,10 +285,11 @@ Vertx 前端固定采用双链路：
 - `packages/domain` 已承接 Product API 的领域状态与动作，Product API server 已收敛为 HTTP 路由层
 - `packages/domain` 已补齐 `ProductApiRepository` 仓储接口与内存实现，为后续持久化和 OpenClaw 镜像留出替换点
 - `packages/product-api-server` 已补齐 JSON 文件持久化 Repository，可通过 `VERTX_API_STATE_FILE` 启用本地状态持久化
-- `packages/domain` 已补齐 Realtime/OpenClaw mirror 解释层，可把 `run.status / chat / session.message / sessions.changed / tool.status` 映射为 Product API 的 run、session 与 audit 状态
+- `packages/domain` 已补齐 Realtime/OpenClaw mirror 解释层，可把 `run.status / chat / session.message / sessions.changed / tool.status / approval.requested / approval.resolved` 映射为 Product API 的 run、session、workbench 与 audit 状态
 - `packages/product-api-server` 的 JSON 文件 Repository 已支持 mirror 所需的 `upsertRun / upsertSession`，因此 run/session 镜像状态可以在本地落盘
 - `packages/product-api-server` 已增加可选 realtime mirror client，通过 `VERTX_REALTIME_MIRROR_URL` 订阅 Vertx Realtime Gateway，并在 Product API server 持有的同一个 Repository 实例内写入镜像状态
 - 当前明确不让 `realtime-gateway-server` 与 `product-api-server` 同时写同一个 JSON 文件，避免本地阶段出现多进程抢写和状态覆盖
+- approval mirror 已能更新工作台待审批计数并写入 warning/info 审计事件，先形成轻量审批可观测闭环
 - `WorkflowDetailPage` 与 `RunDetailPage` 已接入 Product API query
 - `会话详情` 已优先接 realtime gateway，而不是依赖 controller 聚合文本
 - 当前已进入“前端 realtime 基线已通、runtime 真桥接可独立启动、runtime 事件可通过 API server 镜像到产品数据层”的阶段
@@ -422,7 +423,7 @@ Vertx 前端固定采用双链路：
 - 本地可通过 `VERTX_WORKSPACE_ID`、`OPENCLAW_GATEWAY_URL`、`VERTX_REALTIME_PATH` 等环境变量启动
 - Realtime 侧已经从“协议与库”推进到“可启动服务”，Product API 也从“前端 mock fallback”推进到“mock-backed 服务”
 - 前端 Product API client 已覆盖首批固定接口，详情页可直接消费 Product Data Plane
-- Domain 层已经承接 Product API 状态演进、Repository 边界与 OpenClaw realtime mirror 解释层
+- Domain 层已经承接 Product API 状态演进、Repository 边界与 OpenClaw realtime mirror 解释层，mirror 范围已覆盖 run、session、tool、approval
 - Product API server 已具备本地 JSON 文件持久化，并已覆盖 mirror 所需的 run/session upsert
 - Product API server 已具备可选 realtime mirror client，能订阅 Vertx Realtime Gateway live event 并写入自身 Repository
 - 后续重点转向真实 OpenClaw / 飞书触发链路下的端到端验证、生产级 Repository 与飞书触发闭环
