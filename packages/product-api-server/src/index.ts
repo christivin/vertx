@@ -1,7 +1,13 @@
 import { createServer as createHttpServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { pathToFileURL } from "node:url";
-import { createProductApiStore, type CreateWorkflowInput, type UpdateSettingsInput } from "@vertx/domain";
+import {
+  createInMemoryProductApiRepository,
+  createProductApiStore,
+  type CreateWorkflowInput,
+  type UpdateSettingsInput,
+} from "@vertx/domain";
 import { createFileProductApiRepository } from "./file-repository";
+import { startRealtimeMirrorClient, type RealtimeMirrorClient } from "./realtime-mirror-client";
 
 export type ProductApiServerConfig = {
   host: string;
@@ -11,6 +17,8 @@ export type ProductApiServerConfig = {
   workspaceId: string;
   serverVersion: string;
   stateFilePath?: string;
+  realtimeMirrorUrl?: string;
+  realtimeMirrorReconnectDelayMs?: number;
 };
 
 export type ProductApiRuntime = {
@@ -18,6 +26,7 @@ export type ProductApiRuntime = {
   httpServer: ReturnType<typeof createHttpServer>;
   url: string;
   healthUrl: string;
+  realtimeMirror?: RealtimeMirrorClient;
   close: () => Promise<void>;
 };
 
@@ -130,6 +139,8 @@ export function loadProductApiServerConfig(env: NodeJS.ProcessEnv = process.env)
     workspaceId: readRequiredEnv(env, "VERTX_WORKSPACE_ID", DEFAULT_WORKSPACE_ID),
     serverVersion: env.VERTX_API_SERVER_VERSION?.trim() || DEFAULT_SERVER_VERSION,
     stateFilePath: env.VERTX_API_STATE_FILE?.trim() || undefined,
+    realtimeMirrorUrl: env.VERTX_REALTIME_MIRROR_URL?.trim() || undefined,
+    realtimeMirrorReconnectDelayMs: readOptionalNumberEnv(env, "VERTX_REALTIME_MIRROR_RECONNECT_DELAY_MS"),
   };
 }
 
@@ -137,9 +148,18 @@ export async function startProductApiServer(
   config: ProductApiServerConfig,
   logger: Logger = console,
 ): Promise<ProductApiRuntime> {
-  const store = createProductApiStore(
-    config.stateFilePath ? createFileProductApiRepository(config.stateFilePath) : undefined,
-  );
+  const repository = config.stateFilePath
+    ? createFileProductApiRepository(config.stateFilePath)
+    : createInMemoryProductApiRepository();
+  const store = createProductApiStore(repository);
+  const realtimeMirror = config.realtimeMirrorUrl
+    ? startRealtimeMirrorClient({
+        url: config.realtimeMirrorUrl,
+        repository,
+        reconnectDelayMs: config.realtimeMirrorReconnectDelayMs,
+        logger,
+      })
+    : undefined;
 
   const httpServer = createHttpServer(async (request, response) => {
     const url = new URL(request.url ?? "/", "http://localhost");
@@ -286,10 +306,16 @@ export async function startProductApiServer(
     notFound(response);
   });
 
-  await listen(httpServer, config);
+  try {
+    await listen(httpServer, config);
+  } catch (error) {
+    await realtimeMirror?.close();
+    throw error;
+  }
 
   const address = httpServer.address();
   if (!address || typeof address === "string") {
+    await realtimeMirror?.close();
     await closeHttpServer(httpServer);
     throw new Error("product api server did not expose an inet address");
   }
@@ -308,7 +334,9 @@ export async function startProductApiServer(
     httpServer,
     url,
     healthUrl,
+    realtimeMirror,
     close: async () => {
+      await realtimeMirror?.close();
       await closeHttpServer(httpServer);
     },
   };

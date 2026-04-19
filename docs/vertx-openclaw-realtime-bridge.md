@@ -171,7 +171,7 @@ Vertx 前端当前的 session 页和 run 页则需要更稳定的产品态字段
 当前 bridge 还不是最终形态，后续还需要继续推进：
 
 - 把当前 env 化配置接入真实部署环境与鉴权来源管理，而不是只停留在本地启动
-- 把 Realtime Gateway / OpenClaw source 的 live events 接入 `packages/domain` 的 `mirrorRealtimeEventToProductApiRepository`
+- 在真实 OpenClaw / 飞书触发环境下验证 `packages/product-api-server` 的 `VERTX_REALTIME_MIRROR_URL` 订阅链路
 - 为 `chat.history` 建立更完整的契约测试
 - 为 `sessions.changed / session.message / approval / tool stream` 建端到端集成测试
 - 把前端 `SessionDetailPage` 从 mock/gateway 选择，进一步推进到真实 OpenClaw source 驱动
@@ -196,6 +196,7 @@ Vertx 前端当前的 session 页和 run 页则需要更稳定的产品态字段
 - Vertx 已从“mock realtime 原型”进入“可消费真实 OpenClaw websocket 协议”的阶段
 - Vertx 已从“只有库级 bridge”进入“bridge 可独立启动并提供固定 path/health 的阶段”
 - Vertx 已具备独立于前端渲染的 realtime mirror 解释层，可把 `run.status / chat / session.message / sessions.changed / tool.status` 同步为 Product API 的 run、session 与 audit 状态
+- Product API server 已具备可选 realtime mirror client，固定由 API server 持有产品状态写入权，避免 realtime server 与 API server 同时写本地 JSON state file
 - OpenClaw 仍然是 Vertx 的 runtime 基座
 - Vertx 前端不直接依赖 OpenClaw UI
 - Vertx 通过 adapter 层吸收 OpenClaw realtime 能力，而不是把产品层耦合进 OpenClaw 内部目录

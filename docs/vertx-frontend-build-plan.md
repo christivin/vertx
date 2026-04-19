@@ -303,7 +303,9 @@ app/web/src
   - 已完成 `packages/product-api-server` 的 JSON 文件 Repository，可通过 `VERTX_API_STATE_FILE` 持久化 workflow/run/settings/audit 等状态
   - 已完成 `mirrorRealtimeEventToProductApiRepository`，可把 `run.status / chat / session.message / sessions.changed / tool.status` 镜像为 Product API 的 run、session 与 audit 状态
   - JSON 文件 Repository 已补齐 mirror 所需的 `upsertRun / upsertSession` 持久化能力
-  - 下一步是把 Realtime Gateway / OpenClaw source 的 live events 接入 mirror 层，并把本地 JSON 文件持久化替换或扩展为生产级 Repository
+  - 已在 `packages/product-api-server` 增加可选 realtime mirror client，可通过 `VERTX_REALTIME_MIRROR_URL` 订阅 Vertx Realtime Gateway，并在同一个 Repository 实例中写入 live run/session 镜像
+  - 该设计固定 Product API server 为产品状态 owner，避免 realtime server 与 API server 多进程同时写同一个 JSON state file
+  - 下一步是把本地 JSON 文件持久化替换或扩展为生产级 Repository，并在真实 OpenClaw / 飞书触发链路下验证 mirror
 
 ### 阶段 5：飞书闭环
 

@@ -114,10 +114,19 @@ importers:
       '@vertx/domain':
         specifier: workspace:*
         version: link:../domain
+      '@vertx/realtime-gateway-contracts':
+        specifier: workspace:*
+        version: link:../realtime-gateway-contracts
+      ws:
+        specifier: ^8.20.0
+        version: 8.20.0
     devDependencies:
       '@types/node':
         specifier: ^24.8.1
         version: 24.12.2
+      '@types/ws':
+        specifier: ^8.18.1
+        version: 8.18.1
       tsx:
         specifier: ^4.21.0
         version: 4.21.0
