@@ -33,11 +33,12 @@
 - `packages/realtime-gateway` 已补齐 `createOpenClawBackedRealtimeGatewayServer` 组装入口
 - `packages/realtime-gateway-server` 已补齐可启动的 runtime 入口，支持 env 配置、固定 path、health check 与优雅关闭
 - `shared/api` 已补齐 `ProductApiClient + React Query hooks` 基线，列表页优先读 Product API，失败时回退 mock
+- `packages/product-api-server` 已补齐 mock-backed Product API 运行时，支持 health、CORS、列表读取与基础 mutation
 - `SessionDetailPage` 已改为“优先连接 realtime gateway，失败时回退 mock frames”
 
 当前仍未完成但方向已固定：
 
-- Product API 仍主要是 mock data
+- Product API 已具备可运行服务入口，但数据源仍是内存 mock state，还没有接真实领域存储、OpenClaw session/run 镜像或飞书配置
 - OpenClaw remote source 已打通最小握手、事件归一、请求透传与 env 化运行时配置，但还没有接入真实业务鉴权与部署环境
 - `chat.history`、`approval`、`sessions.changed` 等方法/事件还只是协议留位，没有完整业务后端
 
@@ -119,7 +120,7 @@ app/web/src
 - `shared/theme/`
   - token、主题、全局样式
 - `shared/api/`
-  - Product API DTO、mock data、query helper
+  - Product API client、mock fallback、query helper
 - `shared/realtime/`
   - gateway 协议、event reducer、mock frames、client
 
@@ -289,7 +290,8 @@ app/web/src
 - 当前状态：
   - 已完成前端侧 `ProductApiClient`、query hooks 与 mock fallback
   - `workbench / workflows / sessions / connections / settings / audit` 已不再直接耦合 `mock-data`
-  - 下一步是补 Vertx Product API 运行时与 DTO/路由的真实返回
+  - 已完成 `packages/product-api-server` mock-backed 运行时，覆盖 health、CORS、核心 GET 路由与基础 POST/PUT mutation
+  - 下一步是把内存 mock state 替换为 Vertx Domain/持久化数据源，并接入 OpenClaw session/run 镜像
 
 ### 阶段 5：飞书闭环
 

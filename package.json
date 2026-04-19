@@ -3,8 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "pnpm --filter @vertx/realtime-gateway-server build && pnpm --filter @vertx/web build",
+    "build": "pnpm --filter @vertx/product-api-server build && pnpm --filter @vertx/realtime-gateway-server build && pnpm --filter @vertx/web build",
+    "dev:api": "pnpm --filter @vertx/product-api-server dev",
     "dev:realtime": "pnpm --filter @vertx/realtime-gateway-server dev",
+    "start:api": "pnpm --filter @vertx/product-api-server start",
     "start:realtime": "pnpm --filter @vertx/realtime-gateway-server start",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test"

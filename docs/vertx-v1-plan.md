@@ -91,6 +91,7 @@ vertx/
   openclaw/                # 内嵌的 OpenClaw 基座源码，作为二次开发基础
   packages/
     openclaw-adapter/       # 对 OpenClaw 的稳定适配层
+    product-api-server/     # Vertx Product Data Plane 的可启动 API 服务
     realtime-gateway/       # Vertx 对前端暴露的 realtime 协议层
     realtime-gateway-server/# 可启动的 Realtime Gateway 进程入口
     domain/                 # workflow / approval / audit 等业务模型
@@ -279,6 +280,7 @@ Vertx 前端固定采用双链路：
 - `packages/realtime-gateway-contracts`、`packages/openclaw-adapter`、`packages/realtime-gateway` 已落最小可运行代码
 - `packages/realtime-gateway-server` 已可独立启动，前端可通过固定 websocket path 直接连接
 - `app/web/shared/api` 已具备 Product API client、query hooks 与 mock fallback 基线
+- `packages/product-api-server` 已具备 mock-backed Product API 运行时，可承接前端 `VITE_VERTX_API_BASE_URL`
 - `会话详情` 已优先接 realtime gateway，而不是依赖 controller 聚合文本
 - 当前已进入“前端 realtime 基线已通、runtime 真桥接可独立启动”的阶段
 
@@ -383,6 +385,7 @@ Vertx 前端固定采用双链路：
 - API client
 - 状态订阅模型
 - 页面级假数据与真实接口切换机制
+- `VITE_VERTX_API_BASE_URL` 与 Vertx Product API 的联调路径
 - `VITE_VERTX_REALTIME_URL` 与 Vertx Realtime Gateway 的联调路径
 
 ## 阶段 3：企业流程自动化闭环
@@ -405,8 +408,10 @@ Vertx 前端固定采用双链路：
 当前阶段进度补充（2026-04-20）：
 
 - Vertx 已具备 `packages/realtime-gateway-server` 作为可运行 bridge 进程
+- Vertx 已具备 `packages/product-api-server` 作为 Product Data Plane 的可运行 API 进程
 - 本地可通过 `VERTX_WORKSPACE_ID`、`OPENCLAW_GATEWAY_URL`、`VERTX_REALTIME_PATH` 等环境变量启动
-- Realtime 侧已经从“协议与库”推进到“可启动服务”，后续重点转向 Product API 与飞书触发闭环
+- Realtime 侧已经从“协议与库”推进到“可启动服务”，Product API 也从“前端 mock fallback”推进到“mock-backed 服务”
+- 后续重点转向真实领域存储、OpenClaw run/session 镜像与飞书触发闭环
 
 ## 阶段 4：产品化补强
 
