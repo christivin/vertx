@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { createInMemoryProductApiRepository, createProductApiStore } from "./index";
+import {
+  createInMemoryProductApiRepository,
+  createProductApiStore,
+  mirrorRealtimeEventToProductApiRepository,
+} from "./index";
 
 describe("createProductApiStore", () => {
   it("keeps workbench summary derived from runs, sessions, and connected channels", () => {
@@ -81,6 +85,100 @@ describe("createProductApiStore", () => {
     });
     expect(repository.listAuditEvents()[0]).toMatchObject({
       action: "workflow.created",
+    });
+  });
+
+  it("mirrors realtime run status events into run and audit state", () => {
+    const repository = createInMemoryProductApiRepository();
+
+    mirrorRealtimeEventToProductApiRepository(repository, {
+      event: "run.status",
+      payload: {
+        runId: "openclaw-run-1",
+        sessionKey: "agent:main:main",
+        status: "started",
+        ts: 1_700_000_000_000,
+      },
+    });
+    mirrorRealtimeEventToProductApiRepository(repository, {
+      event: "run.status",
+      payload: {
+        runId: "openclaw-run-1",
+        sessionKey: "agent:main:main",
+        status: "completed",
+        ts: 1_700_000_001_000,
+      },
+    });
+
+    expect(repository.getRunDetail("openclaw-run-1")).toMatchObject({
+      id: "openclaw-run-1",
+      workflowId: "agent:main:main",
+      status: "completed",
+    });
+    expect(repository.listAuditEvents()[0]).toMatchObject({
+      action: "runtime.run.completed",
+    });
+  });
+
+  it("mirrors realtime chat and session events into session state", () => {
+    const repository = createInMemoryProductApiRepository();
+
+    mirrorRealtimeEventToProductApiRepository(repository, {
+      event: "chat",
+      payload: {
+        runId: "openclaw-run-2",
+        sessionKey: "session-openclaw-1",
+        state: "delta",
+      },
+    });
+    mirrorRealtimeEventToProductApiRepository(repository, {
+      event: "session.message",
+      payload: {
+        sessionKey: "session-openclaw-1",
+        ts: 1_700_000_002_000,
+      },
+    });
+    mirrorRealtimeEventToProductApiRepository(repository, {
+      event: "chat",
+      payload: {
+        runId: "openclaw-run-2",
+        sessionKey: "session-openclaw-1",
+        state: "final",
+      },
+    });
+
+    expect(repository.getSessionDetail("session-openclaw-1")).toMatchObject({
+      id: "session-openclaw-1",
+      channelType: "openclaw",
+      status: "ended",
+      messageCount: 2,
+    });
+    expect(repository.getRunDetail("openclaw-run-2")).toMatchObject({
+      status: "completed",
+    });
+  });
+
+  it("mirrors tool status events into run summaries and audit events", () => {
+    const repository = createInMemoryProductApiRepository();
+
+    mirrorRealtimeEventToProductApiRepository(repository, {
+      event: "tool.status",
+      payload: {
+        runId: "openclaw-run-3",
+        sessionKey: "session-openclaw-3",
+        name: "feishu.search_docs",
+        phase: "failed",
+        updatedAt: "2026-04-20T09:00:00.000Z",
+      },
+    });
+
+    expect(repository.getRunDetail("openclaw-run-3")).toMatchObject({
+      id: "openclaw-run-3",
+      status: "failed",
+      resultSummary: "工具 feishu.search_docs 状态：failed",
+    });
+    expect(repository.listAuditEvents()[0]).toMatchObject({
+      action: "runtime.tool.failed",
     });
   });
 });

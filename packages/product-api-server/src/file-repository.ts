@@ -55,6 +55,16 @@ export function createFileProductApiRepository(filePath: string): ProductApiRepo
       repository.prependRun(run);
       persist();
     },
+    upsertRun(run) {
+      const result = repository.upsertRun(run);
+      persist();
+      return result;
+    },
+    upsertSession(session) {
+      const result = repository.upsertSession(session);
+      persist();
+      return result;
+    },
     upsertConnection(connection) {
       const result = repository.upsertConnection(connection);
       persist();

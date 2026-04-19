@@ -52,15 +52,22 @@ export type ProductApiRepository = {
   listRunDetails: () => WorkflowRunDetail[];
   getRunDetail: (runId: string) => WorkflowRunDetail | undefined;
   prependRun: (run: WorkflowRunDetail) => void;
+  upsertRun: (run: WorkflowRunDetail) => WorkflowRunDetail;
   listSessions: () => SessionSummary[];
   listSessionDetails: () => SessionDetail[];
   getSessionDetail: (sessionId: string) => SessionDetail | undefined;
+  upsertSession: (session: SessionDetail) => SessionDetail;
   listConnections: () => ChannelConnectionSummary[];
   upsertConnection: (connection: ChannelConnectionSummary) => ChannelConnectionSummary;
   getSettings: () => SettingsDetail;
   setSettings: (settings: SettingsDetail) => void;
   listAuditEvents: () => AuditEventSummary[];
   prependAuditEvent: (event: AuditEventSummary) => void;
+};
+
+export type ProductApiMirrorEvent = {
+  event: "chat" | "session.message" | "sessions.changed" | "run.status" | "tool.status";
+  payload: unknown;
 };
 
 function isoNow() {
@@ -138,6 +145,36 @@ export function createInMemoryProductApiRepository(
         startedAt: run.startedAt,
       });
     },
+    upsertRun(run) {
+      const detailIndex = state.runDetails.findIndex((item) => item.id === run.id);
+      if (detailIndex >= 0) {
+        state.runDetails[detailIndex] = {
+          ...state.runDetails[detailIndex],
+          ...run,
+        };
+      } else {
+        state.runDetails.unshift(run);
+      }
+
+      const summary = {
+        id: run.id,
+        workflowId: run.workflowId,
+        title: run.title,
+        status: run.status,
+        startedAt: run.startedAt,
+      };
+      const summaryIndex = state.runs.findIndex((item) => item.id === run.id);
+      if (summaryIndex >= 0) {
+        state.runs[summaryIndex] = {
+          ...state.runs[summaryIndex],
+          ...summary,
+        };
+      } else {
+        state.runs.unshift(summary);
+      }
+
+      return state.runDetails.find((item) => item.id === run.id) ?? run;
+    },
     listSessions() {
       return state.sessions;
     },
@@ -146,6 +183,36 @@ export function createInMemoryProductApiRepository(
     },
     getSessionDetail(sessionId) {
       return state.sessionDetails.find((item) => item.id === sessionId);
+    },
+    upsertSession(session) {
+      const detailIndex = state.sessionDetails.findIndex((item) => item.id === session.id);
+      if (detailIndex >= 0) {
+        state.sessionDetails[detailIndex] = {
+          ...state.sessionDetails[detailIndex],
+          ...session,
+        };
+      } else {
+        state.sessionDetails.unshift(session);
+      }
+
+      const summary = {
+        id: session.id,
+        title: session.title,
+        channelType: session.channelType,
+        status: session.status,
+        updatedAt: session.updatedAt,
+      };
+      const summaryIndex = state.sessions.findIndex((item) => item.id === session.id);
+      if (summaryIndex >= 0) {
+        state.sessions[summaryIndex] = {
+          ...state.sessions[summaryIndex],
+          ...summary,
+        };
+      } else {
+        state.sessions.unshift(summary);
+      }
+
+      return state.sessionDetails.find((item) => item.id === session.id) ?? session;
     },
     listConnections() {
       return state.connections;
@@ -181,6 +248,200 @@ function computeWorkbenchFromRepository(repository: ProductApiRepository) {
     recentSessions: repository.listSessions().length,
     connectedChannels: repository.listConnections().filter((item) => item.status === "connected").length,
   };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object";
+}
+
+function stringField(record: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === "string" && value.trim()) {
+      return value;
+    }
+  }
+  return undefined;
+}
+
+function numberField(record: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+  }
+  return undefined;
+}
+
+function isoFromValue(value: unknown) {
+  if (typeof value === "string" && value.trim()) {
+    return value;
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return new Date(value).toISOString();
+  }
+  return isoNow();
+}
+
+function toRunStatus(value: unknown): WorkflowRunSummary["status"] {
+  if (value === "queued") {
+    return "queued";
+  }
+  if (value === "completed" || value === "final") {
+    return "completed";
+  }
+  if (value === "failed" || value === "error" || value === "aborted") {
+    return "failed";
+  }
+  return "running";
+}
+
+function sessionIdFromPayload(payload: Record<string, unknown>) {
+  return stringField(payload, ["sessionKey", "sessionId", "id", "key"]);
+}
+
+function mirrorRun(
+  repository: ProductApiRepository,
+  input: {
+    runId: string;
+    sessionKey?: string;
+    status?: unknown;
+    title?: string;
+    ts?: unknown;
+    resultSummary?: string;
+  },
+) {
+  const existing = repository.getRunDetail(input.runId);
+  const status = toRunStatus(input.status);
+  const startedAt = existing?.startedAt ?? isoFromValue(input.ts);
+  const workflowId = existing?.workflowId ?? input.sessionKey ?? "openclaw-runtime";
+  const run: WorkflowRunDetail = {
+    id: input.runId,
+    workflowId,
+    title: existing?.title ?? input.title ?? `OpenClaw Run ${input.runId}`,
+    status,
+    startedAt,
+    resultSummary: input.resultSummary ?? existing?.resultSummary ?? `OpenClaw runtime 状态已同步为 ${status}。`,
+  };
+  repository.upsertRun(run);
+  return run;
+}
+
+function mirrorSession(
+  repository: ProductApiRepository,
+  input: {
+    sessionId: string;
+    title?: string;
+    channelType?: string;
+    status?: SessionSummary["status"];
+    updatedAt?: unknown;
+    incrementMessageCount?: boolean;
+  },
+) {
+  const existing = repository.getSessionDetail(input.sessionId);
+  const session: SessionDetail = {
+    id: input.sessionId,
+    title: existing?.title ?? input.title ?? `OpenClaw Session ${input.sessionId}`,
+    channelType: existing?.channelType ?? input.channelType ?? "openclaw",
+    status: input.status ?? existing?.status ?? "active",
+    updatedAt: isoFromValue(input.updatedAt),
+    messageCount: (existing?.messageCount ?? 0) + (input.incrementMessageCount ? 1 : 0),
+  };
+  repository.upsertSession(session);
+  return session;
+}
+
+export function mirrorRealtimeEventToProductApiRepository(
+  repository: ProductApiRepository,
+  event: ProductApiMirrorEvent,
+) {
+  if (!isRecord(event.payload)) {
+    return;
+  }
+
+  if (event.event === "run.status") {
+    const runId = stringField(event.payload, ["runId", "id"]);
+    if (!runId) {
+      return;
+    }
+    const run = mirrorRun(repository, {
+      runId,
+      sessionKey: stringField(event.payload, ["sessionKey", "sessionId"]),
+      status: event.payload.status ?? event.payload.phase,
+      ts: event.payload.ts,
+    });
+    repository.prependAuditEvent(buildAuditEvent(repository.listAuditEvents().length + 1, `runtime.run.${run.status}`));
+    return;
+  }
+
+  if (event.event === "chat") {
+    const runId = stringField(event.payload, ["runId"]);
+    const sessionId = sessionIdFromPayload(event.payload);
+    const state = stringField(event.payload, ["state"]);
+    if (runId) {
+      mirrorRun(repository, {
+        runId,
+        sessionKey: sessionId,
+        status: state,
+        resultSummary: state === "error" ? stringField(event.payload, ["errorMessage"]) : undefined,
+      });
+    }
+    if (sessionId) {
+      mirrorSession(repository, {
+        sessionId,
+        updatedAt: isoNow(),
+        incrementMessageCount: Boolean(state && ["final", "error"].includes(state)),
+        status: state === "final" || state === "aborted" || state === "error" ? "ended" : "active",
+      });
+    }
+    return;
+  }
+
+  if (event.event === "session.message") {
+    const sessionId = sessionIdFromPayload(event.payload);
+    if (!sessionId) {
+      return;
+    }
+    mirrorSession(repository, {
+      sessionId,
+      updatedAt: stringField(event.payload, ["updatedAt", "createdAt"]) ?? numberField(event.payload, ["ts"]),
+      incrementMessageCount: true,
+    });
+    return;
+  }
+
+  if (event.event === "sessions.changed") {
+    const sessionId = sessionIdFromPayload(event.payload);
+    if (!sessionId) {
+      return;
+    }
+    mirrorSession(repository, {
+      sessionId,
+      updatedAt: stringField(event.payload, ["updatedAt"]) ?? numberField(event.payload, ["ts"]),
+      status: event.payload.status === "ended" ? "ended" : "active",
+    });
+    return;
+  }
+
+  if (event.event === "tool.status") {
+    const runId = stringField(event.payload, ["runId"]);
+    if (!runId) {
+      return;
+    }
+    const phase = stringField(event.payload, ["phase"]);
+    mirrorRun(repository, {
+      runId,
+      sessionKey: stringField(event.payload, ["sessionKey", "sessionId"]),
+      status: phase === "failed" ? "failed" : phase === "completed" ? "running" : "running",
+      title: stringField(event.payload, ["name"]),
+      ts: stringField(event.payload, ["startedAt", "updatedAt"]),
+      resultSummary: `工具 ${stringField(event.payload, ["name"]) ?? "tool"} 状态：${phase ?? "unknown"}`,
+    });
+    repository.prependAuditEvent(
+      buildAuditEvent(repository.listAuditEvents().length + 1, `runtime.tool.${phase ?? "unknown"}`),
+    );
+  }
 }
 
 export function createProductApiStore(

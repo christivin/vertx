@@ -301,7 +301,9 @@ app/web/src
   - 已完成 `packages/domain` 的 Product API Store，Product API server 已从“持有状态”收敛为“HTTP 路由 + Domain 调用”
   - 已完成 `ProductApiRepository` 接口与内存仓储实现，Domain Store 已可注入仓储边界
   - 已完成 `packages/product-api-server` 的 JSON 文件 Repository，可通过 `VERTX_API_STATE_FILE` 持久化 workflow/run/settings/audit 等状态
-  - 下一步是接入 OpenClaw session/run 镜像，并把本地 JSON 文件持久化替换或扩展为生产级 Repository
+  - 已完成 `mirrorRealtimeEventToProductApiRepository`，可把 `run.status / chat / session.message / sessions.changed / tool.status` 镜像为 Product API 的 run、session 与 audit 状态
+  - JSON 文件 Repository 已补齐 mirror 所需的 `upsertRun / upsertSession` 持久化能力
+  - 下一步是把 Realtime Gateway / OpenClaw source 的 live events 接入 mirror 层，并把本地 JSON 文件持久化替换或扩展为生产级 Repository
 
 ### 阶段 5：飞书闭环
 
@@ -312,7 +314,7 @@ app/web/src
 - 前端工程可本地启动
 - 静态页面骨架完整
 - mock realtime 可以看到流式输出与 tool 状态变化
-- contracts、adapter、domain、api 都具备最小代码骨架，其中 domain 已承接 Product API 的状态演进逻辑与 Repository 边界
+- contracts、adapter、domain、api 都具备最小代码骨架，其中 domain 已承接 Product API 的状态演进逻辑、Repository 边界与 OpenClaw realtime mirror 解释层
 - 文档中已明确：
   - Vertagent 负责视觉与模块参考
   - OpenClaw 负责实时状态机制参考
