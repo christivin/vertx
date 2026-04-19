@@ -1,19 +1,34 @@
 import type {
   AuditEventSummary,
   ChannelConnectionSummary,
+  SessionDetail,
   SessionSummary,
   SettingsDetail,
   WorkbenchSummary,
+  WorkflowDetail,
+  WorkflowRunDetail,
+  WorkflowRunSummary,
   WorkflowSummary,
 } from "@vertx/api";
 import {
   mockAuditEvents,
   mockConnections,
+  mockRunDetails,
+  mockRuns,
+  mockSessionDetails,
   mockSessions,
   mockSettings,
   mockWorkbench,
+  mockWorkflowDetails,
   mockWorkflows,
 } from "./mock-data";
+
+export type CreateWorkflowInput = {
+  name?: string;
+  description?: string;
+};
+
+export type UpdateSettingsInput = Partial<SettingsDetail>;
 
 type ProductApiClientOptions = {
   baseUrl?: string;
@@ -25,6 +40,11 @@ type MockResolver<T> = () => T;
 
 const JSON_HEADERS = {
   Accept: "application/json",
+} as const;
+
+const JSON_MUTATION_HEADERS = {
+  ...JSON_HEADERS,
+  "Content-Type": "application/json",
 } as const;
 
 function parseBooleanEnv(value: string | undefined, fallback: boolean) {
@@ -78,20 +98,156 @@ export class ProductApiClient {
     return await this.read("/api/workflows", () => mockWorkflows);
   }
 
+  async createWorkflow(input: CreateWorkflowInput) {
+    return await this.write(
+      "/api/workflows",
+      {
+        method: "POST",
+        body: input,
+      },
+      () => ({
+        id: "wf-local",
+        name: input.name?.trim() || "未命名流程",
+        status: "draft" as const,
+        lastRunAt: new Date().toISOString(),
+        description: input.description?.trim() || "本地 mock fallback 创建的流程。",
+      }),
+    );
+  }
+
+  async getWorkflowDetail(workflowId: string) {
+    return await this.read(`/api/workflows/${encodeURIComponent(workflowId)}`, () => {
+      const detail = mockWorkflowDetails.find((item) => item.id === workflowId);
+      if (detail) {
+        return detail;
+      }
+      const summary = mockWorkflows.find((item) => item.id === workflowId) ?? mockWorkflows[0];
+      return {
+        ...summary,
+        description: "Product API mock fallback 未找到该流程详情，已返回默认流程。",
+      };
+    });
+  }
+
+  async startWorkflowRun(workflowId: string) {
+    return await this.write(
+      `/api/workflows/${encodeURIComponent(workflowId)}/run`,
+      {
+        method: "POST",
+      },
+      () => ({
+        id: "run-local",
+        workflowId,
+        title: mockWorkflows.find((item) => item.id === workflowId)?.name ?? "本地流程运行",
+        status: "queued" as const,
+        startedAt: new Date().toISOString(),
+        resultSummary: "Product API mock fallback 已创建本地运行。",
+      }),
+    );
+  }
+
+  async getWorkflowRunSummaries() {
+    return await this.read("/api/runs", () => mockRuns);
+  }
+
+  async getWorkflowRunDetail(runId: string) {
+    return await this.read(`/api/runs/${encodeURIComponent(runId)}`, () => {
+      const detail = mockRunDetails.find((item) => item.id === runId);
+      if (detail) {
+        return detail;
+      }
+      const summary = mockRuns.find((item) => item.id === runId) ?? mockRuns[0];
+      return {
+        ...summary,
+        resultSummary: "Product API mock fallback 未找到该运行详情，已返回默认运行。",
+      };
+    });
+  }
+
+  async retryWorkflowRun(runId: string) {
+    return await this.write(
+      `/api/runs/${encodeURIComponent(runId)}/retry`,
+      {
+        method: "POST",
+      },
+      () => ({
+        id: "run-retry-local",
+        workflowId: mockRunDetails.find((item) => item.id === runId)?.workflowId ?? "wf-local",
+        title: "本地重试运行",
+        status: "queued" as const,
+        startedAt: new Date().toISOString(),
+        resultSummary: "Product API mock fallback 已创建本地重试运行。",
+      }),
+    );
+  }
+
   async getSessionSummaries() {
     return await this.read("/api/sessions", () => mockSessions);
+  }
+
+  async getSessionDetail(sessionId: string) {
+    return await this.read(`/api/sessions/${encodeURIComponent(sessionId)}`, () => {
+      const detail = mockSessionDetails.find((item) => item.id === sessionId);
+      if (detail) {
+        return detail;
+      }
+      const summary = mockSessions.find((item) => item.id === sessionId) ?? mockSessions[0];
+      return {
+        ...summary,
+        messageCount: 0,
+      };
+    });
   }
 
   async getChannelConnectionSummaries() {
     return await this.read("/api/channel-connections", () => mockConnections);
   }
 
+  async connectFeishu() {
+    return await this.write(
+      "/api/channel-connections/feishu/connect",
+      {
+        method: "POST",
+      },
+      () => ({
+        id: "conn-feishu",
+        channelType: "feishu",
+        status: "connected" as const,
+        lastActiveAt: new Date().toISOString(),
+      }),
+    );
+  }
+
   async getSettingsDetail() {
     return await this.read("/api/settings", () => mockSettings);
   }
 
+  async updateSettings(input: UpdateSettingsInput) {
+    return await this.write(
+      "/api/settings",
+      {
+        method: "PUT",
+        body: input,
+      },
+      () => ({
+        ...mockSettings,
+        ...input,
+      }),
+    );
+  }
+
   async getAuditEventSummaries() {
     return await this.read("/api/audit-events", () => mockAuditEvents);
+  }
+
+  private buildUrl(path: string) {
+    if (!this.baseUrl) {
+      return path;
+    }
+    if (this.baseUrl.endsWith("/api") && path.startsWith("/api/")) {
+      return `${this.baseUrl}${path.slice("/api".length)}`;
+    }
+    return `${this.baseUrl}${path}`;
   }
 
   private async read<T>(path: string, mockResolver: MockResolver<T>) {
@@ -100,8 +256,35 @@ export class ProductApiClient {
     }
 
     try {
-      const response = await this.fetchImpl(`${this.baseUrl}${path}`, {
+      const response = await this.fetchImpl(this.buildUrl(path), {
         headers: JSON_HEADERS,
+      });
+      return await readJsonResponse<T>(response);
+    } catch (error) {
+      if (this.fallbackToMock) {
+        return mockResolver();
+      }
+      throw error;
+    }
+  }
+
+  private async write<T>(
+    path: string,
+    options: {
+      method: "POST" | "PUT";
+      body?: unknown;
+    },
+    mockResolver: MockResolver<T>,
+  ) {
+    if (!this.baseUrl) {
+      return mockResolver();
+    }
+
+    try {
+      const response = await this.fetchImpl(this.buildUrl(path), {
+        method: options.method,
+        headers: JSON_MUTATION_HEADERS,
+        body: options.body === undefined ? undefined : JSON.stringify(options.body),
       });
       return await readJsonResponse<T>(response);
     } catch (error) {
@@ -125,8 +308,12 @@ export const productApiClient = createProductApiClient({
 export type {
   AuditEventSummary,
   ChannelConnectionSummary,
+  SessionDetail,
   SessionSummary,
   SettingsDetail,
   WorkbenchSummary,
+  WorkflowDetail,
+  WorkflowRunDetail,
+  WorkflowRunSummary,
   WorkflowSummary,
 };

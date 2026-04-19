@@ -280,7 +280,9 @@ Vertx 前端固定采用双链路：
 - `packages/realtime-gateway-contracts`、`packages/openclaw-adapter`、`packages/realtime-gateway` 已落最小可运行代码
 - `packages/realtime-gateway-server` 已可独立启动，前端可通过固定 websocket path 直接连接
 - `app/web/shared/api` 已具备 Product API client、query hooks 与 mock fallback 基线
+- `app/web/shared/api` 已覆盖首批固定 Product API 接口，详情页与 mutation 不再散落在页面内
 - `packages/product-api-server` 已具备 mock-backed Product API 运行时，可承接前端 `VITE_VERTX_API_BASE_URL`
+- `WorkflowDetailPage` 与 `RunDetailPage` 已接入 Product API query
 - `会话详情` 已优先接 realtime gateway，而不是依赖 controller 聚合文本
 - 当前已进入“前端 realtime 基线已通、runtime 真桥接可独立启动”的阶段
 
@@ -387,6 +389,7 @@ Vertx 前端固定采用双链路：
 - 页面级假数据与真实接口切换机制
 - `VITE_VERTX_API_BASE_URL` 与 Vertx Product API 的联调路径
 - `VITE_VERTX_REALTIME_URL` 与 Vertx Realtime Gateway 的联调路径
+- workflow/run detail 与 mutation 的统一 query/mutation 边界
 
 ## 阶段 3：企业流程自动化闭环
 
@@ -411,6 +414,7 @@ Vertx 前端固定采用双链路：
 - Vertx 已具备 `packages/product-api-server` 作为 Product Data Plane 的可运行 API 进程
 - 本地可通过 `VERTX_WORKSPACE_ID`、`OPENCLAW_GATEWAY_URL`、`VERTX_REALTIME_PATH` 等环境变量启动
 - Realtime 侧已经从“协议与库”推进到“可启动服务”，Product API 也从“前端 mock fallback”推进到“mock-backed 服务”
+- 前端 Product API client 已覆盖首批固定接口，详情页可直接消费 Product Data Plane
 - 后续重点转向真实领域存储、OpenClaw run/session 镜像与飞书触发闭环
 
 ## 阶段 4：产品化补强

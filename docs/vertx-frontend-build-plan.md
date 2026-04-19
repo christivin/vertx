@@ -34,6 +34,8 @@
 - `packages/realtime-gateway-server` 已补齐可启动的 runtime 入口，支持 env 配置、固定 path、health check 与优雅关闭
 - `shared/api` 已补齐 `ProductApiClient + React Query hooks` 基线，列表页优先读 Product API，失败时回退 mock
 - `packages/product-api-server` 已补齐 mock-backed Product API 运行时，支持 health、CORS、列表读取与基础 mutation
+- `shared/api` 已覆盖首批固定 Product API 接口，包含 workflow/run/session detail 与 workflow/run/settings/feishu mutation
+- `WorkflowDetailPage` 与 `RunDetailPage` 已接入 Product API query，不再停留在纯骨架或硬编码状态
 - `SessionDetailPage` 已改为“优先连接 realtime gateway，失败时回退 mock frames”
 
 当前仍未完成但方向已固定：
@@ -120,7 +122,7 @@ app/web/src
 - `shared/theme/`
   - token、主题、全局样式
 - `shared/api/`
-  - Product API client、mock fallback、query helper
+  - Product API client、mock fallback、query helper、mutation helper
 - `shared/realtime/`
   - gateway 协议、event reducer、mock frames、client
 
@@ -290,6 +292,8 @@ app/web/src
 - 当前状态：
   - 已完成前端侧 `ProductApiClient`、query hooks 与 mock fallback
   - `workbench / workflows / sessions / connections / settings / audit` 已不再直接耦合 `mock-data`
+  - `workflow detail / run detail` 已接入 Product API query
+  - 前端 API client 已覆盖首批固定接口，包括 workflow/run mutation、settings update 与 Feishu connect
   - 已完成 `packages/product-api-server` mock-backed 运行时，覆盖 health、CORS、核心 GET 路由与基础 POST/PUT mutation
   - 下一步是把内存 mock state 替换为 Vertx Domain/持久化数据源，并接入 OpenClaw session/run 镜像
 
