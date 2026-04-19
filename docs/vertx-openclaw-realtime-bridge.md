@@ -173,7 +173,8 @@ Vertx 前端当前的 session 页和 run 页则需要更稳定的产品态字段
 - 把当前 env 化配置接入真实部署环境与鉴权来源管理，而不是只停留在本地启动
 - 在真实 OpenClaw / 飞书触发环境下验证 `packages/product-api-server` 的 `VERTX_REALTIME_MIRROR_URL` 订阅链路
 - 在真实 OpenClaw 部署中验证 `chat.history` 的响应形态，并据此完善前端历史消息映射
-- 为 `sessions.changed / session.message / approval / tool stream` 继续补真实 OpenClaw 场景下的端到端集成测试
+- 在真实 OpenClaw 部署中验证 `session.message / sessions.changed` 的完整 payload 形态，并据此完善 Product API session 映射
+- 为 `approval / tool stream` 继续补真实 OpenClaw 场景下的端到端集成测试
 - 把前端 `SessionDetailPage` 从 mock/gateway 选择，进一步推进到真实 OpenClaw source 驱动
 - 决定是否需要补 `presence / health / tick` 的归一策略
 
@@ -196,6 +197,7 @@ Vertx 前端当前的 session 页和 run 页则需要更稳定的产品态字段
 - Vertx 已从“mock realtime 原型”进入“可消费真实 OpenClaw websocket 协议”的阶段
 - Vertx 已从“只有库级 bridge”进入“bridge 可独立启动并提供固定 path/health 的阶段”
 - `chat.history` 已在 `openclaw-adapter` 与 `realtime-gateway` 两层具备透传契约测试，前端 seq-gap 恢复时可触发 history reload
+- `session.message / sessions.changed` 已在 `openclaw-adapter` 与 `realtime-gateway` 两层具备事件透传契约测试，并可进入 Product API session mirror
 - Vertx 已具备独立于前端渲染的 realtime mirror 解释层，可把 `run.status / chat / session.message / sessions.changed / tool.status / approval.requested / approval.resolved` 同步为 Product API 的 run、session、workbench 与 audit 状态
 - Product API server 已具备可选 realtime mirror client，固定由 API server 持有产品状态写入权，避免 realtime server 与 API server 同时写本地 JSON state file
 - OpenClaw 仍然是 Vertx 的 runtime 基座

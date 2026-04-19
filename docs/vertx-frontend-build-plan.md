@@ -46,7 +46,7 @@
 - Product API 已具备可运行服务入口、Domain Store、Repository 边界、本地 JSON 文件持久化基线与 realtime mirror client，但还没有接生产级持久化或飞书真实配置
 - OpenClaw remote source 已打通最小握手、事件归一、请求透传与 env 化运行时配置，但还没有接入真实业务鉴权与部署环境
 - `chat.history` 已具备 adapter/gateway 透传契约与前端恢复入口，但还没有在真实 OpenClaw 部署中做端到端验证
-- `sessions.changed` 等事件还需要继续补真实 OpenClaw 场景下的端到端验证
+- `session.message / sessions.changed` 已具备 adapter/gateway 透传契约和 Product API mirror 覆盖，但还需要继续补真实 OpenClaw 场景下的端到端验证
 
 ## 2. 双链路架构
 
@@ -278,6 +278,7 @@ app/web/src
   - 已在 `SessionDetailPage` 中接入并验证 gateway 优先 / mock 回退逻辑
   - 已补 `history.loaded` reducer，前端在 seq-gap 时会通过 `chat.history` 请求历史消息并恢复本地 message thread
   - `SessionDetailPage` 已提供 gateway plane 下的手动“同步历史”入口，用于调试和恢复历史线程
+  - 已验证活跃 run 期间 `session.message` 不会覆盖当前 `chatStream`，后续可在 run 结束后通过 history reload 纠偏
 
 ### 阶段 3：Realtime Gateway
 
@@ -290,6 +291,7 @@ app/web/src
   - 已具备 `OpenClawGatewaySource` 最小握手、事件归一、请求透传能力
   - 已完成 `packages/realtime-gateway-server`，支持 env 配置、固定 websocket path、health check、优雅关闭
   - 已补 `chat.history` 在 `openclaw-adapter` 与 `realtime-gateway` 两层的请求透传契约测试
+  - 已补 `session.message / sessions.changed` 在 `openclaw-adapter` 与 `realtime-gateway` 两层的事件透传契约测试
   - 下一步是把真实运行环境中的 `openclaw` gateway 鉴权来源、Product API 与飞书链路接入，并补更多真实场景契约测试
 
 ### 阶段 4：Product API
@@ -310,6 +312,7 @@ app/web/src
   - 已在 `packages/product-api-server` 增加可选 realtime mirror client，可通过 `VERTX_REALTIME_MIRROR_URL` 订阅 Vertx Realtime Gateway，并在同一个 Repository 实例中写入 live run/session 镜像
   - 该设计固定 Product API server 为产品状态 owner，避免 realtime server 与 API server 多进程同时写同一个 JSON state file
   - approval mirror 已可驱动工作台待审批计数与 warning/info 审计事件，为后续流程审批点打基础
+  - `sessions.changed` mirror 已覆盖无 transcript message 的 session metadata 变更，可更新 Product API session 状态
   - 下一步是把本地 JSON 文件持久化替换或扩展为生产级 Repository，并在真实 OpenClaw / 飞书触发链路下验证 mirror
 
 ### 阶段 5：飞书闭环

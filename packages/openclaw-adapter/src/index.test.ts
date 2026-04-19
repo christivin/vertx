@@ -162,10 +162,39 @@ describe("OpenClawGatewaySource", () => {
         },
       }),
     );
+    liveSocket.send(
+      JSON.stringify({
+        type: "event",
+        event: "session.message",
+        seq: 5,
+        payload: {
+          sessionKey: "session-1",
+          messageId: "message-1",
+          messageSeq: 8,
+          message: {
+            role: "assistant",
+            content: [{ type: "text", text: "已更新会话记录" }],
+          },
+        },
+      }),
+    );
+    liveSocket.send(
+      JSON.stringify({
+        type: "event",
+        event: "sessions.changed",
+        seq: 6,
+        payload: {
+          sessionKey: "session-1",
+          phase: "message",
+          messageId: "message-1",
+          messageSeq: 8,
+        },
+      }),
+    );
 
     await new Promise((resolve) => setTimeout(resolve, 20));
 
-    expect(events).toHaveLength(3);
+    expect(events).toHaveLength(5);
     expect(events[0]).toMatchObject({
       event: "chat",
       payload: {
@@ -192,6 +221,23 @@ describe("OpenClawGatewaySource", () => {
         id: "approval-1",
         title: "批准执行 shell",
         approvalKind: "exec",
+      },
+    });
+    expect(events[3]).toMatchObject({
+      event: "session.message",
+      payload: {
+        sessionKey: "session-1",
+        messageId: "message-1",
+        messageSeq: 8,
+      },
+    });
+    expect(events[4]).toMatchObject({
+      event: "sessions.changed",
+      payload: {
+        sessionKey: "session-1",
+        phase: "message",
+        messageId: "message-1",
+        messageSeq: 8,
       },
     });
   });

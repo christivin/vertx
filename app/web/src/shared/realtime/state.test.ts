@@ -54,4 +54,38 @@ describe("realtimeReducer", () => {
       },
     ]);
   });
+
+  it("keeps active stream visible when session.message arrives during a run", () => {
+    let state = realtimeReducer(initialRealtimeState, {
+      type: "event",
+      frame: {
+        type: "event",
+        event: "chat",
+        seq: 1,
+        payload: {
+          runId: "run-active",
+          sessionKey: "session-1",
+          state: "delta",
+          message: { text: "正在生成中" },
+        },
+      },
+    });
+
+    state = realtimeReducer(state, {
+      type: "event",
+      frame: {
+        type: "event",
+        event: "session.message",
+        seq: 2,
+        payload: {
+          sessionKey: "session-1",
+          messageId: "message-1",
+        },
+      },
+    });
+
+    expect(state.chatRunId).toBe("run-active");
+    expect(state.chatStream).toBe("正在生成中");
+    expect(state.lastSeq).toBe(2);
+  });
 });

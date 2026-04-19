@@ -50,12 +50,49 @@ function toHistoryMessages(payload: unknown): ChatMessage[] {
   });
 }
 
+function payloadSessionKey(payload: unknown) {
+  if (!isRecord(payload)) {
+    return null;
+  }
+  if (typeof payload.sessionKey === "string") {
+    return payload.sessionKey;
+  }
+  if (typeof payload.sessionId === "string") {
+    return payload.sessionId;
+  }
+  return null;
+}
+
+function isTerminalRunFrame(frame: GatewayFrame) {
+  if (frame.type !== "event" || !isRecord(frame.payload)) {
+    return false;
+  }
+
+  if (frame.event === "chat") {
+    return ["final", "aborted", "error"].includes(String(frame.payload.state));
+  }
+
+  if (frame.event === "run.status") {
+    const status =
+      typeof frame.payload.status === "string"
+        ? frame.payload.status
+        : typeof frame.payload.phase === "string"
+          ? frame.payload.phase
+          : "";
+    return ["completed", "aborted", "failed", "error"].includes(status);
+  }
+
+  return false;
+}
+
 export function useSessionRealtime(options: UseSessionRealtimeOptions) {
   const [state, dispatch] = useReducer(realtimeReducer, initialRealtimeState);
   const clientRef = useRef<RealtimeGatewayClient | null>(null);
   const reconnectTimerRef = useRef<number | null>(null);
   const mockTimerRefs = useRef<number[]>([]);
   const closedByUserRef = useRef(false);
+  const activeRunRef = useRef<string | null>(null);
+  const pendingSessionMessageReloadRef = useRef(false);
 
   const gatewayUrl = options.gatewayUrl ?? import.meta.env.VITE_VERTX_REALTIME_URL;
   const plane = gatewayUrl ? ("gateway" as const) : ("mock" as const);
@@ -72,22 +109,6 @@ export function useSessionRealtime(options: UseSessionRealtimeOptions) {
       window.clearTimeout(timerId);
     }
     mockTimerRefs.current = [];
-  }, []);
-
-  const handleFrame = useCallback((frame: GatewayFrame) => {
-    if (frame.type === "hello") {
-      dispatch({ type: "hello", frame });
-      return;
-    }
-
-    if (frame.type === "event") {
-      dispatch({ type: "event", frame });
-      return;
-    }
-
-    if (frame.type === "error") {
-      dispatch({ type: "connect.error", error: frame.message });
-    }
   }, []);
 
   const replayMockFrames = useCallback(() => {
@@ -114,6 +135,53 @@ export function useSessionRealtime(options: UseSessionRealtimeOptions) {
       dispatch({ type: "history.loaded", messages });
     },
     [options.sessionKey],
+  );
+
+  const requestHistoryFromCurrentClient = useCallback(
+    (reason?: string) => {
+      const client = clientRef.current;
+      if (!client) {
+        return;
+      }
+      void loadHistory(client, reason).catch((error) => {
+        dispatch({ type: "connect.error", error: toErrorMessage(error) });
+      });
+    },
+    [loadHistory],
+  );
+
+  const handleFrame = useCallback(
+    (frame: GatewayFrame) => {
+      if (frame.type === "hello") {
+        dispatch({ type: "hello", frame });
+        return;
+      }
+
+      if (frame.type === "event") {
+        dispatch({ type: "event", frame });
+
+        if (frame.event === "session.message" && payloadSessionKey(frame.payload) === options.sessionKey) {
+          if (activeRunRef.current) {
+            pendingSessionMessageReloadRef.current = true;
+            return;
+          }
+          requestHistoryFromCurrentClient("检测到会话消息更新，正在同步历史…");
+          return;
+        }
+
+        if (isTerminalRunFrame(frame) && pendingSessionMessageReloadRef.current) {
+          pendingSessionMessageReloadRef.current = false;
+          activeRunRef.current = null;
+          requestHistoryFromCurrentClient("活跃运行已结束，正在同步延迟的会话消息…");
+        }
+        return;
+      }
+
+      if (frame.type === "error") {
+        dispatch({ type: "connect.error", error: frame.message });
+      }
+    },
+    [options.sessionKey, requestHistoryFromCurrentClient],
   );
 
   const connectGateway = useCallback(() => {
@@ -153,11 +221,16 @@ export function useSessionRealtime(options: UseSessionRealtimeOptions) {
   }, [clearReconnectTimer, gatewayUrl, handleFrame, loadHistory]);
 
   useEffect(() => {
+    activeRunRef.current = state.chatRunId;
+  }, [state.chatRunId]);
+
+  useEffect(() => {
     closedByUserRef.current = false;
     connectGateway();
 
     return () => {
       closedByUserRef.current = true;
+      pendingSessionMessageReloadRef.current = false;
       clearReconnectTimer();
       clearMockTimers();
       clientRef.current?.close();

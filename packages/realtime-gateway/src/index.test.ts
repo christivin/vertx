@@ -359,6 +359,62 @@ describe("createRealtimeGatewayServer", () => {
       },
     });
 
+    liveUpstreamSocket.send(
+      JSON.stringify({
+        type: "event",
+        event: "session.message",
+        seq: 3,
+        payload: {
+          sessionKey: "session-1",
+          messageId: "message-1",
+          messageSeq: 8,
+          message: {
+            role: "assistant",
+            content: [{ type: "text", text: "已更新会话记录" }],
+          },
+        },
+      }),
+    );
+
+    const sessionMessageEvent = await nextFrame(socket);
+    expect(sessionMessageEvent).toMatchObject({
+      type: "event",
+      event: "session.message",
+      payload: {
+        workspaceId: "workspace-3",
+        sessionKey: "session-1",
+        messageId: "message-1",
+        messageSeq: 8,
+      },
+    });
+
+    liveUpstreamSocket.send(
+      JSON.stringify({
+        type: "event",
+        event: "sessions.changed",
+        seq: 4,
+        payload: {
+          sessionKey: "session-1",
+          phase: "message",
+          messageId: "message-1",
+          messageSeq: 8,
+        },
+      }),
+    );
+
+    const sessionsChangedEvent = await nextFrame(socket);
+    expect(sessionsChangedEvent).toMatchObject({
+      type: "event",
+      event: "sessions.changed",
+      payload: {
+        workspaceId: "workspace-3",
+        sessionKey: "session-1",
+        phase: "message",
+        messageId: "message-1",
+        messageSeq: 8,
+      },
+    });
+
     socket.send(
       JSON.stringify({
         type: "req",

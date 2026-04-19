@@ -158,6 +158,33 @@ describe("createProductApiStore", () => {
     });
   });
 
+  it("mirrors sessions.changed events without requiring a transcript message", () => {
+    const repository = createInMemoryProductApiRepository();
+
+    mirrorRealtimeEventToProductApiRepository(repository, {
+      event: "sessions.changed",
+      payload: {
+        sessionKey: "session-openclaw-2",
+        status: "active",
+        updatedAt: "2026-04-20T10:05:00.000Z",
+      },
+    });
+    mirrorRealtimeEventToProductApiRepository(repository, {
+      event: "sessions.changed",
+      payload: {
+        sessionKey: "session-openclaw-2",
+        status: "ended",
+        updatedAt: "2026-04-20T10:06:00.000Z",
+      },
+    });
+
+    expect(repository.getSessionDetail("session-openclaw-2")).toMatchObject({
+      id: "session-openclaw-2",
+      status: "ended",
+      messageCount: 0,
+    });
+  });
+
   it("mirrors tool status events into run summaries and audit events", () => {
     const repository = createInMemoryProductApiRepository();
 
