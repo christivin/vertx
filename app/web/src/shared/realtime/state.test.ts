@@ -88,4 +88,71 @@ describe("realtimeReducer", () => {
     expect(state.chatStream).toBe("正在生成中");
     expect(state.lastSeq).toBe(2);
   });
+
+  it("updates a single tool card across started, streaming, and completed phases", () => {
+    let state = realtimeReducer(initialRealtimeState, {
+      type: "event",
+      frame: {
+        type: "event",
+        event: "tool.status",
+        seq: 1,
+        payload: {
+          runId: "run-tool",
+          sessionKey: "session-1",
+          toolCallId: "tool-1",
+          name: "feishu.search_docs",
+          phase: "started",
+          output: "开始搜索",
+          startedAt: "2026-04-20T10:00:00.000Z",
+          updatedAt: "2026-04-20T10:00:00.000Z",
+        },
+      },
+    });
+
+    state = realtimeReducer(state, {
+      type: "event",
+      frame: {
+        type: "event",
+        event: "tool.status",
+        seq: 2,
+        payload: {
+          runId: "run-tool",
+          sessionKey: "session-1",
+          toolCallId: "tool-1",
+          name: "feishu.search_docs",
+          phase: "streaming",
+          output: "已读取 3 篇文档",
+          startedAt: "2026-04-20T10:00:00.000Z",
+          updatedAt: "2026-04-20T10:00:01.000Z",
+        },
+      },
+    });
+
+    state = realtimeReducer(state, {
+      type: "event",
+      frame: {
+        type: "event",
+        event: "tool.status",
+        seq: 3,
+        payload: {
+          runId: "run-tool",
+          sessionKey: "session-1",
+          toolCallId: "tool-1",
+          name: "feishu.search_docs",
+          phase: "completed",
+          output: "最终命中 8 篇文档",
+          startedAt: "2026-04-20T10:00:00.000Z",
+          updatedAt: "2026-04-20T10:00:02.000Z",
+        },
+      },
+    });
+
+    expect(state.toolStreamOrder).toEqual(["tool-1"]);
+    expect(state.chatToolMessages).toHaveLength(1);
+    expect(state.chatToolMessages[0]).toMatchObject({
+      toolCallId: "tool-1",
+      phase: "completed",
+      output: "最终命中 8 篇文档",
+    });
+  });
 });

@@ -380,4 +380,118 @@ describe("OpenClawGatewaySource", () => {
       },
     });
   });
+
+  it("normalizes openclaw tool stream phases into stable tool.status events", async () => {
+    const server = new WebSocketServer({ port: 0 });
+    servers.push(server);
+
+    let socketRef: TestSocket | null = null;
+    server.on("connection", (socket) => {
+      socketRef = socket;
+      socket.send(JSON.stringify({ type: "event", event: "connect.challenge", payload: { nonce: "nonce-1" } }));
+      socket.on("message", (raw: RawData) => {
+        const request = JSON.parse(String(raw)) as { id?: string; method?: string };
+        if (request.method === "connect") {
+          socket.send(
+            JSON.stringify({
+              type: "res",
+              id: request.id,
+              ok: true,
+              payload: {
+                type: "hello-ok",
+                protocol: 3,
+                server: { version: "openclaw-test" },
+                snapshot: { presence: [] },
+              },
+            }),
+          );
+          return;
+        }
+        if (request.method === "sessions.subscribe") {
+          socket.send(JSON.stringify({ type: "res", id: request.id, ok: true, payload: { ok: true } }));
+        }
+      });
+    });
+
+    const source = createOpenClawGatewaySource({
+      url: waitForOpen(server),
+      autoSubscribeSessions: false,
+    });
+    cleanups.push(() => source.close?.());
+
+    const events: Array<{ event: string; payload: unknown }> = [];
+    const unsubscribe = source.subscribe((event) => {
+      events.push({ event: event.event, payload: event.payload });
+    });
+    cleanups.push(unsubscribe);
+
+    await source.getSnapshot?.({ workspaceId: "workspace-1" });
+    const liveSocket = requireSocket(socketRef);
+
+    for (const [index, data] of [
+      {
+        phase: "start",
+        partialResult: "开始搜索",
+      },
+      {
+        phase: "update",
+        partialResult: { text: "已读取 3 篇文档" },
+      },
+      {
+        phase: "error",
+        error: { text: "飞书接口限流" },
+      },
+      {
+        phase: "result",
+        result: { text: "最终命中 8 篇文档" },
+      },
+    ].entries()) {
+      liveSocket.send(
+        JSON.stringify({
+          type: "event",
+          event: "agent",
+          seq: 10 + index,
+          payload: {
+            runId: "run-tool-stream",
+            sessionKey: "session-tool-stream",
+            stream: "tool",
+            ts: 1_700_000_000_000 + index,
+            data: {
+              toolCallId: "tool-stream-1",
+              name: "feishu.search_docs",
+              args: { range: "7d" },
+              ...data,
+            },
+          },
+        }),
+      );
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(events.map((event) => event.event)).toEqual([
+      "tool.status",
+      "tool.status",
+      "tool.status",
+      "tool.status",
+    ]);
+    expect(events.map((event) => (event.payload as { phase?: string }).phase)).toEqual([
+      "started",
+      "streaming",
+      "failed",
+      "completed",
+    ]);
+    expect(events[1].payload).toMatchObject({
+      toolCallId: "tool-stream-1",
+      output: "已读取 3 篇文档",
+    });
+    expect(events[2].payload).toMatchObject({
+      toolCallId: "tool-stream-1",
+      output: "飞书接口限流",
+    });
+    expect(events[3].payload).toMatchObject({
+      toolCallId: "tool-stream-1",
+      output: "最终命中 8 篇文档",
+    });
+  });
 });

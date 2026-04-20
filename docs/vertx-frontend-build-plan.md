@@ -47,6 +47,7 @@
 - OpenClaw remote source 已打通最小握手、事件归一、请求透传与 env 化运行时配置，但还没有接入真实业务鉴权与部署环境
 - `chat.history` 已具备 adapter/gateway 透传契约与前端恢复入口，但还没有在真实 OpenClaw 部署中做端到端验证
 - `session.message / sessions.changed` 已具备 adapter/gateway 透传契约和 Product API mirror 覆盖，但还需要继续补真实 OpenClaw 场景下的端到端验证
+- `tool stream` 已具备 completed/failed 基础覆盖，但仍需要继续补更细的真实阶段流验证与长链路集成测试
 
 ## 2. 双链路架构
 
@@ -292,6 +293,7 @@ app/web/src
   - 已完成 `packages/realtime-gateway-server`，支持 env 配置、固定 websocket path、health check、优雅关闭
   - 已补 `chat.history` 在 `openclaw-adapter` 与 `realtime-gateway` 两层的请求透传契约测试
   - 已补 `session.message / sessions.changed` 在 `openclaw-adapter` 与 `realtime-gateway` 两层的事件透传契约测试
+  - 已补 OpenClaw `tool start/update/error/result` 到 Vertx `tool.status started/streaming/failed/completed` 的 adapter 契约测试
   - 下一步是把真实运行环境中的 `openclaw` gateway 鉴权来源、Product API 与飞书链路接入，并补更多真实场景契约测试
 
 ### 阶段 4：Product API

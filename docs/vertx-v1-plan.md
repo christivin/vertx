@@ -292,6 +292,7 @@ Vertx 前端固定采用双链路：
 - approval mirror 已能更新工作台待审批计数并写入 warning/info 审计事件，先形成轻量审批可观测闭环
 - `chat.history` 已在 `openclaw-adapter` 与 `realtime-gateway` 两层补齐透传契约测试，前端 seq-gap 恢复时可请求历史消息纠偏
 - `session.message / sessions.changed` 已在 adapter/gateway 两层补齐事件透传契约，Product API mirror 也覆盖了 session metadata 变更
+- OpenClaw `tool start/update/error/result` 已在 adapter 层补齐到 Vertx `tool.status started/streaming/failed/completed` 的归一契约测试
 - `WorkflowDetailPage` 与 `RunDetailPage` 已接入 Product API query
 - `会话详情` 已优先接 realtime gateway，而不是依赖 controller 聚合文本
 - 当前已进入“前端 realtime 基线已通、runtime 真桥接可独立启动、runtime 事件可通过 API server 镜像到产品数据层”的阶段
@@ -430,6 +431,7 @@ Vertx 前端固定采用双链路：
 - Product API server 已具备可选 realtime mirror client，能订阅 Vertx Realtime Gateway live event 并写入自身 Repository
 - 前端 realtime store 已补 `history.loaded`，seq-gap 时可通过 `chat.history` 恢复本地 message thread
 - 前端 realtime reducer 已验证活跃 run 期间 `session.message` 不会覆盖当前 `chatStream`
+- 前端 realtime reducer 已验证同一 `toolCallId` 在 started/streaming/completed 阶段会更新同一张 tool card，而不是重复插入
 - 后续重点转向真实 OpenClaw / 飞书触发链路下的端到端验证、生产级 Repository 与飞书触发闭环
 
 ## 阶段 4：产品化补强
