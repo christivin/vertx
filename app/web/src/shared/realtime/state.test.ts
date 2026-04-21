@@ -113,8 +113,23 @@ describe("realtimeReducer", () => {
       type: "event",
       frame: {
         type: "event",
-        event: "tool.status",
+        event: "chat",
         seq: 2,
+        payload: {
+          runId: "run-tool",
+          sessionKey: "session-1",
+          state: "delta",
+          message: { text: "正在整理文档摘要" },
+        },
+      },
+    });
+
+    state = realtimeReducer(state, {
+      type: "event",
+      frame: {
+        type: "event",
+        event: "tool.status",
+        seq: 3,
         payload: {
           runId: "run-tool",
           sessionKey: "session-1",
@@ -133,7 +148,7 @@ describe("realtimeReducer", () => {
       frame: {
         type: "event",
         event: "tool.status",
-        seq: 3,
+        seq: 4,
         payload: {
           runId: "run-tool",
           sessionKey: "session-1",
@@ -149,10 +164,64 @@ describe("realtimeReducer", () => {
 
     expect(state.toolStreamOrder).toEqual(["tool-1"]);
     expect(state.chatToolMessages).toHaveLength(1);
+    expect(state.chatStreamSegments).toEqual([
+      {
+        text: "正在整理文档摘要",
+        ts: expect.any(Number),
+      },
+    ]);
     expect(state.chatToolMessages[0]).toMatchObject({
       toolCallId: "tool-1",
       phase: "completed",
       output: "最终命中 8 篇文档",
     });
+  });
+
+  it("tracks pending approvals across requested and resolved events", () => {
+    let state = realtimeReducer(initialRealtimeState, {
+      type: "event",
+      frame: {
+        type: "event",
+        event: "approval.requested",
+        seq: 1,
+        payload: {
+          id: "approval-1",
+          title: "允许发送飞书回执",
+        },
+      },
+    });
+
+    expect(state.pendingApprovals).toEqual([
+      {
+        id: "approval-1",
+        title: "允许发送飞书回执",
+      },
+    ]);
+
+    state = realtimeReducer(state, {
+      type: "event",
+      frame: {
+        type: "event",
+        event: "approval.resolved",
+        seq: 2,
+        payload: {
+          id: "approval-1",
+          approved: true,
+        },
+      },
+    });
+
+    expect(state.pendingApprovals).toEqual([]);
+  });
+
+  it("resets state when switching to another session", () => {
+    let state = realtimeReducer(initialRealtimeState, {
+      type: "user.queue",
+      text: "整理本周日报",
+    });
+
+    state = realtimeReducer(state, { type: "session.reset" });
+
+    expect(state).toEqual(initialRealtimeState);
   });
 });

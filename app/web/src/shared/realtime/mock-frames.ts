@@ -4,7 +4,7 @@ export const mockHelloFrame: HelloFrame = {
   type: "hello",
   protocol: 1,
   server: { version: "0.1.0" },
-  features: { methods: ["chat.send"], events: ["chat", "agent", "tool.status"] },
+  features: { methods: ["chat.send"], events: ["chat", "agent", "tool.status", "approval.requested"] },
   snapshot: { workspace: "Vertx Workspace" },
 };
 
@@ -58,6 +58,16 @@ export const mockRealtimeFrames: EventFrame[] = [
       sessionKey: "session-1",
       state: "final",
       message: { text: "本周日报显示销售线索增长 18%，但交付问题集中在售后响应超时。" },
+    },
+  },
+  {
+    type: "event",
+    event: "approval.requested",
+    seq: 5,
+    payload: {
+      id: "approval-1",
+      title: "允许发送飞书回执",
+      approvalKind: "exec",
     },
   },
 ];

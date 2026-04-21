@@ -84,6 +84,8 @@ Vertx 自建 Web 工作台，提供企业办公产品体验。该层不直接依
 docs/
   vertx-upstream-dd.md
   vertx-v1-plan.md
+  vertx-product-spec.md
+  vertx-feature-delivery-tracker.md
 
 vertx/
   app/
@@ -127,6 +129,13 @@ Vertx Web 工作台的首批模块固定为：
 - `设置`
 
 ### 4.1 各模块职责
+
+当前功能基线与逐项完成状态不再只散落在计划文档里，而是由下面两份文档统一管理：
+
+- `docs/vertx-product-spec.md`
+- `docs/vertx-feature-delivery-tracker.md`
+
+后续实现必须严格对照这两份文档推进。
 
 #### 工作台
 
@@ -293,6 +302,7 @@ Vertx 前端固定采用双链路：
 - `chat.history` 已在 `openclaw-adapter` 与 `realtime-gateway` 两层补齐透传契约测试，前端 seq-gap 恢复时可请求历史消息纠偏
 - `session.message / sessions.changed` 已在 adapter/gateway 两层补齐事件透传契约，Product API mirror 也覆盖了 session metadata 变更
 - OpenClaw `tool start/update/error/result` 已在 adapter 层补齐到 Vertx `tool.status started/streaming/failed/completed` 的归一契约测试
+- `SessionDetailPage` 已展示 realtime `pendingApprovals` 队列，会话页开始具备审批状态感知
 - `WorkflowDetailPage` 与 `RunDetailPage` 已接入 Product API query
 - `会话详情` 已优先接 realtime gateway，而不是依赖 controller 聚合文本
 - 当前已进入“前端 realtime 基线已通、runtime 真桥接可独立启动、runtime 事件可通过 API server 镜像到产品数据层”的阶段

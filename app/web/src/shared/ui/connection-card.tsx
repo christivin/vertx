@@ -4,10 +4,16 @@ export function ConnectionCard({
   name,
   description,
   status,
+  actionLabel = "打开配置",
+  actionDisabled = false,
+  onAction,
 }: {
   name: string;
   description: string;
   status: "connected" | "pending" | "offline";
+  actionLabel?: string;
+  actionDisabled?: boolean;
+  onAction?: () => void;
 }) {
   const tone = status === "connected" ? "success" : status === "pending" ? "warning" : "danger";
   return (
@@ -19,8 +25,13 @@ export function ConnectionCard({
         </div>
         <StatusBadge label={status} tone={tone} />
       </div>
-      <button type="button" className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-accent-foreground">
-        打开配置
+      <button
+        type="button"
+        className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-accent-foreground disabled:cursor-not-allowed disabled:opacity-50"
+        disabled={actionDisabled}
+        onClick={onAction}
+      >
+        {actionLabel}
       </button>
     </div>
   );

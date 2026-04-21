@@ -30,6 +30,7 @@ export type RealtimeState = {
 };
 
 export type RealtimeAction =
+  | { type: "session.reset" }
   | { type: "connect.start" }
   | { type: "recover.start"; reason: string }
   | { type: "connect.error"; error: string }
@@ -168,6 +169,8 @@ export function realtimeReducer(state: RealtimeState, action: RealtimeAction): R
   const next = structuredClone(state);
 
   switch (action.type) {
+    case "session.reset":
+      return structuredClone(initialRealtimeState);
     case "connect.start":
       next.connectionStatus = "connecting";
       next.lastError = null;

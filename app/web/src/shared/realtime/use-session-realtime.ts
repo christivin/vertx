@@ -225,6 +225,12 @@ export function useSessionRealtime(options: UseSessionRealtimeOptions) {
   }, [state.chatRunId]);
 
   useEffect(() => {
+    pendingSessionMessageReloadRef.current = false;
+    activeRunRef.current = null;
+    dispatch({ type: "session.reset" });
+  }, [options.sessionKey]);
+
+  useEffect(() => {
     closedByUserRef.current = false;
     connectGateway();
 
@@ -290,6 +296,9 @@ export function useSessionRealtime(options: UseSessionRealtimeOptions) {
     plane,
     submitTask,
     stopTask,
+    replayDemoRun: () => {
+      void submitTask("请汇总最近 7 天飞书日报，并标出需要审批的发送动作。");
+    },
     loadHistory: async () => {
       const client = clientRef.current;
       if (!client) {

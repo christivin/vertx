@@ -3,6 +3,7 @@ import { DataTable } from "@/shared/ui/data-table";
 import { ErrorState } from "@/shared/ui/error-state";
 import { PageHeader } from "@/shared/ui/page-header";
 import { StatusBadge } from "@/shared/ui/status-badge";
+import { Link } from "react-router-dom";
 
 export function SessionsPage() {
   const sessionsQuery = useSessionSummaries();
@@ -21,13 +22,22 @@ export function SessionsPage() {
       <PageHeader title="会话" description="会话列表使用 product API，活跃对话的实时状态将在详情页中通过 realtime plane 渲染。" />
       <DataTable
         columns={[
-          { key: "title", title: "会话名", render: (item) => item.title },
+          {
+            key: "title",
+            title: "会话名",
+            render: (item) => (
+              <Link className="font-medium text-[var(--vx-text-primary)] underline-offset-4 hover:underline" to={`/sessions/${item.id}`}>
+                {item.title}
+              </Link>
+            ),
+          },
           { key: "channel", title: "来源", render: (item) => item.channelType },
           {
             key: "status",
             title: "状态",
             render: (item) => <StatusBadge label={item.status} tone={item.status === "active" ? "success" : "neutral"} />,
           },
+          { key: "updatedAt", title: "更新时间", render: (item) => item.updatedAt },
         ]}
         rows={sessionsQuery.data ?? []}
       />

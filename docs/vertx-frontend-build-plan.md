@@ -18,6 +18,10 @@
 - `vertx-v1-plan.md`：总体产品和技术方案
 - `vertx-frontend-reference.md`：上游前端参考拆解
 - `vertx-frontend-build-plan.md`：当前前端工程实施规格
+- `vertx-product-spec.md`：完整产品功能规格
+- `vertx-feature-delivery-tracker.md`：逐项实现、测试、验证状态追踪
+
+当前执行规则已经固定为“先写全量产品规格，再按 tracker 一次只闭环一个高优先级功能”，避免前端实现继续碎片化推进。
 
 ### 当前落地进展（2026-04-20）
 
@@ -280,6 +284,7 @@ app/web/src
   - 已补 `history.loaded` reducer，前端在 seq-gap 时会通过 `chat.history` 请求历史消息并恢复本地 message thread
   - `SessionDetailPage` 已提供 gateway plane 下的手动“同步历史”入口，用于调试和恢复历史线程
   - 已验证活跃 run 期间 `session.message` 不会覆盖当前 `chatStream`，后续可在 run 结束后通过 history reload 纠偏
+  - `SessionDetailPage` 已展示 realtime `pendingApprovals` 队列，mock/gateway 两种 plane 下都能感知待审批状态
 
 ### 阶段 3：Realtime Gateway
 
