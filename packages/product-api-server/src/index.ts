@@ -1,6 +1,7 @@
 import { createServer as createHttpServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { pathToFileURL } from "node:url";
 import {
+  type CreateAutomationInput,
   createInMemoryProductApiRepository,
   type CreateKnowledgeSourceInput,
   createProductApiStore,
@@ -300,6 +301,39 @@ export async function startProductApiServer(
       if (request.method === "POST" && routePath === "/knowledge-sources") {
         const payload = await readJsonBody<CreateKnowledgeSourceInput>(request);
         writeJson(response, 201, store.createKnowledgeSource(payload));
+        return;
+      }
+
+      if (request.method === "GET" && routePath === "/automations") {
+        writeJson(response, 200, store.listAutomations());
+        return;
+      }
+
+      if (request.method === "POST" && routePath === "/automations") {
+        const payload = await readJsonBody<CreateAutomationInput>(request);
+        writeJson(response, 201, store.createAutomation(payload));
+        return;
+      }
+
+      const automationToggleMatch = routePath.match(/^\/automations\/([^/]+)\/toggle$/);
+      if (request.method === "POST" && automationToggleMatch) {
+        const automation = store.toggleAutomation(automationToggleMatch[1] ?? "");
+        if (!automation) {
+          notFound(response);
+          return;
+        }
+        writeJson(response, 200, automation);
+        return;
+      }
+
+      const automationRunMatch = routePath.match(/^\/automations\/([^/]+)\/run$/);
+      if (request.method === "POST" && automationRunMatch) {
+        const automation = store.runAutomation(automationRunMatch[1] ?? "");
+        if (!automation) {
+          notFound(response);
+          return;
+        }
+        writeJson(response, 200, automation);
         return;
       }
 

@@ -1,4 +1,5 @@
 import {
+  type AutomationSummary,
   createMockProductApiState,
   type AuditEventSummary,
   type ChannelConnectionSummary,
@@ -43,6 +44,11 @@ export type CreateKnowledgeSourceInput = {
   sourceType?: KnowledgeSourceSummary["sourceType"];
 };
 
+export type CreateAutomationInput = {
+  name?: string;
+  triggerType?: AutomationSummary["triggerType"];
+};
+
 export type ProductApiStore = ReturnType<typeof createProductApiStore>;
 
 export type ProductApiRepository = {
@@ -69,6 +75,10 @@ export type ProductApiRepository = {
   setSettings: (settings: SettingsDetail) => void;
   listKnowledgeSources: () => KnowledgeSourceSummary[];
   prependKnowledgeSource: (knowledgeSource: KnowledgeSourceSummary) => void;
+  listAutomations: () => AutomationSummary[];
+  getAutomation: (automationId: string) => AutomationSummary | undefined;
+  prependAutomation: (automation: AutomationSummary) => void;
+  upsertAutomation: (automation: AutomationSummary) => AutomationSummary;
   listAuditEvents: () => AuditEventSummary[];
   prependAuditEvent: (event: AuditEventSummary) => void;
 };
@@ -252,6 +262,24 @@ export function createInMemoryProductApiRepository(
     },
     prependKnowledgeSource(knowledgeSource) {
       state.knowledgeSources.unshift(knowledgeSource);
+    },
+    listAutomations() {
+      return state.automations;
+    },
+    getAutomation(automationId) {
+      return state.automations.find((item) => item.id === automationId);
+    },
+    prependAutomation(automation) {
+      state.automations.unshift(automation);
+    },
+    upsertAutomation(automation) {
+      const existingIndex = state.automations.findIndex((item) => item.id === automation.id);
+      if (existingIndex >= 0) {
+        state.automations[existingIndex] = automation;
+        return automation;
+      }
+      state.automations.unshift(automation);
+      return automation;
     },
     listAuditEvents() {
       return state.auditEvents;
@@ -520,6 +548,7 @@ export function createProductApiStore(
   let workflowCounter = repository.listWorkflows().length + 1;
   let runCounter = repository.listRuns().length + 1;
   let knowledgeCounter = repository.listKnowledgeSources().length + 1;
+  let automationCounter = repository.listAutomations().length + 1;
   let auditCounter = repository.listAuditEvents().length + 1;
 
   const appendAuditEvent = (action: string, level: AuditEventSummary["level"] = "info") => {
@@ -653,6 +682,53 @@ export function createProductApiStore(
       repository.prependKnowledgeSource(knowledgeSource);
       appendAuditEvent("knowledge_source.created");
       return knowledgeSource;
+    },
+    listAutomations() {
+      return repository.listAutomations();
+    },
+    createAutomation(input: CreateAutomationInput) {
+      const id = `automation-${automationCounter++}`;
+      const triggerType = input.triggerType ?? "schedule";
+      const automation: AutomationSummary = {
+        id,
+        name: input.name?.trim() || `未命名自动化 ${id}`,
+        triggerType,
+        status: "active",
+        lastRunAt: undefined,
+        nextRunAt: triggerType === "manual" ? undefined : isoNow(),
+      };
+      repository.prependAutomation(automation);
+      appendAuditEvent("automation.created");
+      return automation;
+    },
+    toggleAutomation(automationId: string) {
+      const automation = repository.getAutomation(automationId);
+      if (!automation) {
+        return null;
+      }
+      const nextStatus = automation.status === "active" ? "paused" : "active";
+      const nextAutomation: AutomationSummary = {
+        ...automation,
+        status: nextStatus,
+        nextRunAt: nextStatus === "active" && automation.triggerType !== "manual" ? isoNow() : undefined,
+      };
+      repository.upsertAutomation(nextAutomation);
+      appendAuditEvent(`automation.${nextStatus}`);
+      return nextAutomation;
+    },
+    runAutomation(automationId: string) {
+      const automation = repository.getAutomation(automationId);
+      if (!automation) {
+        return null;
+      }
+      const nextAutomation: AutomationSummary = {
+        ...automation,
+        lastRunAt: isoNow(),
+        nextRunAt: automation.status === "active" && automation.triggerType !== "manual" ? isoNow() : automation.nextRunAt,
+      };
+      repository.upsertAutomation(nextAutomation);
+      appendAuditEvent("automation.run.triggered");
+      return nextAutomation;
     },
     listAuditEvents() {
       return repository.listAuditEvents();

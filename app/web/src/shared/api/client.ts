@@ -1,5 +1,6 @@
 import type {
   AuditEventSummary,
+  AutomationSummary,
   ChannelConnectionSummary,
   KnowledgeSourceSummary,
   SessionDetail,
@@ -13,6 +14,7 @@ import type {
 } from "@vertx/api";
 import {
   mockAuditEvents,
+  mockAutomations,
   mockConnections,
   mockKnowledgeSources,
   mockRunDetails,
@@ -35,6 +37,11 @@ export type UpdateSettingsInput = Partial<SettingsDetail>;
 export type CreateKnowledgeSourceInput = {
   name?: string;
   sourceType?: KnowledgeSourceSummary["sourceType"];
+};
+
+export type CreateAutomationInput = {
+  name?: string;
+  triggerType?: AutomationSummary["triggerType"];
 };
 
 type ProductApiClientOptions = {
@@ -269,6 +276,62 @@ export class ProductApiClient {
     );
   }
 
+  async getAutomationSummaries() {
+    return await this.read("/api/automations", () => mockAutomations);
+  }
+
+  async createAutomation(input: CreateAutomationInput) {
+    return await this.write(
+      "/api/automations",
+      {
+        method: "POST",
+        body: input,
+      },
+      () => ({
+        id: "automation-local",
+        name: input.name?.trim() || "未命名自动化",
+        triggerType: input.triggerType ?? "schedule",
+        status: "active" as const,
+        lastRunAt: undefined,
+        nextRunAt: (input.triggerType ?? "schedule") === "manual" ? undefined : new Date().toISOString(),
+      }),
+    );
+  }
+
+  async toggleAutomation(automationId: string) {
+    return await this.write(
+      `/api/automations/${encodeURIComponent(automationId)}/toggle`,
+      {
+        method: "POST",
+      },
+      () => {
+        const current = mockAutomations.find((item) => item.id === automationId) ?? mockAutomations[0];
+        const nextStatus = current.status === "active" ? "paused" : "active";
+        return {
+          ...current,
+          status: nextStatus,
+          nextRunAt: nextStatus === "active" && current.triggerType !== "manual" ? new Date().toISOString() : undefined,
+        };
+      },
+    );
+  }
+
+  async runAutomation(automationId: string) {
+    return await this.write(
+      `/api/automations/${encodeURIComponent(automationId)}/run`,
+      {
+        method: "POST",
+      },
+      () => {
+        const current = mockAutomations.find((item) => item.id === automationId) ?? mockAutomations[0];
+        return {
+          ...current,
+          lastRunAt: new Date().toISOString(),
+        };
+      },
+    );
+  }
+
   private buildUrl(path: string) {
     if (!this.baseUrl) {
       return path;
@@ -336,6 +399,7 @@ export const productApiClient = createProductApiClient({
 
 export type {
   AuditEventSummary,
+  AutomationSummary,
   ChannelConnectionSummary,
   KnowledgeSourceSummary,
   SessionDetail,

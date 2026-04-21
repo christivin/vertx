@@ -122,7 +122,7 @@ describe("startProductApiServer", () => {
     expect(logger.info).toHaveBeenCalledTimes(2);
   });
 
-  it("supports workflow creation, run creation, settings update, feishu connect, and knowledge source mutations", async () => {
+  it("supports workflow creation, run creation, settings update, feishu connect, knowledge source, and automation mutations", async () => {
     const runtime = await startProductApiServer({
       host: "127.0.0.1",
       port: 0,
@@ -200,6 +200,45 @@ describe("startProductApiServer", () => {
     const knowledgeSources = (await knowledgeSourcesListResponse.json()) as Array<{ name: string }>;
     expect(knowledgeSources[0]?.name).toBe("售后排障手册");
 
+    const automationResponse = await fetch(`${runtime.url}/automations`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        name: "每周巡检提醒",
+        triggerType: "schedule",
+      }),
+    });
+    expect(automationResponse.status).toBe(201);
+    const createdAutomation = (await automationResponse.json()) as { id: string; name: string; status: string };
+    expect(createdAutomation).toMatchObject({
+      name: "每周巡检提醒",
+      status: "active",
+    });
+
+    const toggleAutomationResponse = await fetch(`${runtime.url}/automations/${createdAutomation.id}/toggle`, {
+      method: "POST",
+    });
+    expect(toggleAutomationResponse.status).toBe(200);
+    await expect(toggleAutomationResponse.json()).resolves.toMatchObject({
+      id: createdAutomation.id,
+      status: "paused",
+    });
+
+    const runAutomationResponse = await fetch(`${runtime.url}/automations/${createdAutomation.id}/run`, {
+      method: "POST",
+    });
+    expect(runAutomationResponse.status).toBe(200);
+    await expect(runAutomationResponse.json()).resolves.toMatchObject({
+      id: createdAutomation.id,
+      lastRunAt: expect.any(String),
+    });
+
+    const automationsListResponse = await fetch(`${runtime.url}/automations`);
+    const automations = (await automationsListResponse.json()) as Array<{ name: string }>;
+    expect(automations[0]?.name).toBe("每周巡检提醒");
+
     const workbenchResponse = await fetch(`${runtime.url}/workbench/summary`);
     await expect(workbenchResponse.json()).resolves.toMatchObject({
       connectedChannels: 1,
@@ -208,7 +247,13 @@ describe("startProductApiServer", () => {
     const auditResponse = await fetch(`${runtime.url}/audit-events`);
     const auditEvents = (await auditResponse.json()) as Array<{ action: string }>;
     expect(auditEvents.map((item) => item.action)).toEqual(
-      expect.arrayContaining(["channel_connection.feishu.connected", "knowledge_source.created"]),
+      expect.arrayContaining([
+        "channel_connection.feishu.connected",
+        "knowledge_source.created",
+        "automation.created",
+        "automation.paused",
+        "automation.run.triggered",
+      ]),
     );
   });
 

@@ -124,4 +124,28 @@ describe("ProductApiClient", () => {
       status: "syncing",
     });
   });
+
+  it("supports automation list, creation, toggle, and manual run", async () => {
+    const client = new ProductApiClient();
+
+    await expect(client.getAutomationSummaries()).resolves.toHaveLength(2);
+    await expect(
+      client.createAutomation({
+        name: "每周巡检提醒",
+        triggerType: "schedule",
+      }),
+    ).resolves.toMatchObject({
+      name: "每周巡检提醒",
+      triggerType: "schedule",
+      status: "active",
+    });
+    await expect(client.toggleAutomation("automation-1")).resolves.toMatchObject({
+      id: "automation-1",
+      status: "paused",
+    });
+    await expect(client.runAutomation("automation-2")).resolves.toMatchObject({
+      id: "automation-2",
+      lastRunAt: expect.any(String),
+    });
+  });
 });

@@ -62,6 +62,15 @@ export type KnowledgeSourceSummary = {
   documentCount: number;
 };
 
+export type AutomationSummary = {
+  id: string;
+  name: string;
+  triggerType: "schedule" | "event" | "manual";
+  status: "active" | "paused";
+  lastRunAt?: string;
+  nextRunAt?: string;
+};
+
 export type AuditEventSummary = {
   id: string;
   action: string;
@@ -176,6 +185,25 @@ export const mockKnowledgeSources: KnowledgeSourceSummary[] = [
   },
 ];
 
+export const mockAutomations: AutomationSummary[] = [
+  {
+    id: "automation-1",
+    name: "日报汇总定时任务",
+    triggerType: "schedule",
+    status: "active",
+    lastRunAt: "2026-04-20T08:00:00.000Z",
+    nextRunAt: "2026-04-21T08:00:00.000Z",
+  },
+  {
+    id: "automation-2",
+    name: "知识库增量同步",
+    triggerType: "event",
+    status: "paused",
+    lastRunAt: "2026-04-19T18:30:00.000Z",
+    nextRunAt: undefined,
+  },
+];
+
 export const mockAuditEvents: AuditEventSummary[] = [
   { id: "audit-1", action: "workflow.run.started", level: "info", happenedAt: "2026-04-20T08:10:00.000Z" },
   { id: "audit-2", action: "approval.requested", level: "warning", happenedAt: "2026-04-20T08:13:00.000Z" },
@@ -192,6 +220,7 @@ export type ProductApiState = {
   connections: ChannelConnectionSummary[];
   settings: SettingsDetail;
   knowledgeSources: KnowledgeSourceSummary[];
+  automations: AutomationSummary[];
   auditEvents: AuditEventSummary[];
 };
 
@@ -207,6 +236,7 @@ export function createMockProductApiState(): ProductApiState {
     connections: structuredClone(mockConnections),
     settings: structuredClone(mockSettings),
     knowledgeSources: structuredClone(mockKnowledgeSources),
+    automations: structuredClone(mockAutomations),
     auditEvents: structuredClone(mockAuditEvents),
   };
 }

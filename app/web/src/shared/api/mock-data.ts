@@ -1,5 +1,6 @@
 export {
   mockAuditEvents,
+  mockAutomations,
   mockConnections,
   mockKnowledgeSources,
   mockRunDetails,

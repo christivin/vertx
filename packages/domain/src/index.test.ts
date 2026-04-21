@@ -96,6 +96,34 @@ describe("createProductApiStore", () => {
     });
   });
 
+  it("creates, toggles, and runs automations", () => {
+    const store = createProductApiStore();
+
+    const automation = store.createAutomation({
+      name: "每周巡检提醒",
+      triggerType: "schedule",
+    });
+    expect(automation).toMatchObject({
+      name: "每周巡检提醒",
+      status: "active",
+    });
+
+    const pausedAutomation = store.toggleAutomation(automation.id);
+    expect(pausedAutomation).toMatchObject({
+      id: automation.id,
+      status: "paused",
+    });
+
+    const triggeredAutomation = store.runAutomation(automation.id);
+    expect(triggeredAutomation).toMatchObject({
+      id: automation.id,
+      lastRunAt: expect.any(String),
+    });
+    expect(store.listAuditEvents().map((item) => item.action)).toEqual(
+      expect.arrayContaining(["automation.created", "automation.paused", "automation.run.triggered"]),
+    );
+  });
+
   it("can run against an injected repository boundary", () => {
     const repository = createInMemoryProductApiRepository();
     const store = createProductApiStore(repository);

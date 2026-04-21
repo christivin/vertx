@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  type AutomationSummary,
+  type CreateAutomationInput,
   productApiClient,
   type CreateKnowledgeSourceInput,
   type CreateWorkflowInput,
@@ -149,6 +151,53 @@ export function useCreateKnowledgeSourceMutation() {
     mutationFn: (input: CreateKnowledgeSourceInput) => productApiClient.createKnowledgeSource(input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["knowledge-source-summaries"] });
+      void queryClient.invalidateQueries({ queryKey: ["audit-event-summaries"] });
+    },
+  });
+}
+
+export function useAutomationSummaries() {
+  return useQuery({
+    queryKey: ["automation-summaries"],
+    queryFn: () => productApiClient.getAutomationSummaries(),
+  });
+}
+
+export function useCreateAutomationMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateAutomationInput) => productApiClient.createAutomation(input),
+    onSuccess: (automation) => {
+      queryClient.setQueryData(["automation-summaries"], (current: AutomationSummary[] | undefined) => [
+        automation,
+        ...(current ?? []).filter((item) => item.id !== automation.id),
+      ]);
+      void queryClient.invalidateQueries({ queryKey: ["audit-event-summaries"] });
+    },
+  });
+}
+
+export function useToggleAutomationMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (automationId: string) => productApiClient.toggleAutomation(automationId),
+    onSuccess: (automation) => {
+      queryClient.setQueryData(["automation-summaries"], (current: AutomationSummary[] | undefined) =>
+        (current ?? []).map((item) => (item.id === automation.id ? automation : item)),
+      );
+      void queryClient.invalidateQueries({ queryKey: ["audit-event-summaries"] });
+    },
+  });
+}
+
+export function useRunAutomationMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (automationId: string) => productApiClient.runAutomation(automationId),
+    onSuccess: (automation) => {
+      queryClient.setQueryData(["automation-summaries"], (current: AutomationSummary[] | undefined) =>
+        (current ?? []).map((item) => (item.id === automation.id ? automation : item)),
+      );
       void queryClient.invalidateQueries({ queryKey: ["audit-event-summaries"] });
     },
   });

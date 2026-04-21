@@ -54,6 +54,7 @@
 - `tool stream` 已具备 completed/failed 基础覆盖，但仍需要继续补更细的真实阶段流验证与长链路集成测试
 - `app/web` 已补页面级回归测试基线，覆盖 `SessionDetailPage` demo 回放、`ConnectionsPage` 飞书连接反馈、`SettingsPage` 编辑保存反馈
 - `知识` 页面已从占位页推进到真实 `knowledge_source` 资源，具备列表、创建和同步状态展示的最小可用基线
+- `自动化` 页面已从占位页推进到真实 `automation` 资源，具备列表、创建、启停和手动触发的最小可用基线
 
 ## 2. 双链路架构
 

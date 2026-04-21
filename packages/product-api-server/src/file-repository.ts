@@ -79,6 +79,17 @@ export function createFileProductApiRepository(filePath: string): ProductApiRepo
       repository.prependKnowledgeSource(knowledgeSource);
       persist();
     },
+    listAutomations: repository.listAutomations,
+    getAutomation: repository.getAutomation,
+    prependAutomation(automation) {
+      repository.prependAutomation(automation);
+      persist();
+    },
+    upsertAutomation(automation) {
+      const result = repository.upsertAutomation(automation);
+      persist();
+      return result;
+    },
     prependAuditEvent(event) {
       repository.prependAuditEvent(event);
       persist();
