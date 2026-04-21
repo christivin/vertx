@@ -52,6 +52,7 @@
 - `chat.history` 已具备 adapter/gateway 透传契约与前端恢复入口，但还没有在真实 OpenClaw 部署中做端到端验证
 - `session.message / sessions.changed` 已具备 adapter/gateway 透传契约和 Product API mirror 覆盖，但还需要继续补真实 OpenClaw 场景下的端到端验证
 - `tool stream` 已具备 completed/failed 基础覆盖，但仍需要继续补更细的真实阶段流验证与长链路集成测试
+- `app/web` 已补页面级回归测试基线，覆盖 `SessionDetailPage` demo 回放、`ConnectionsPage` 飞书连接反馈、`SettingsPage` 编辑保存反馈
 
 ## 2. 双链路架构
 
