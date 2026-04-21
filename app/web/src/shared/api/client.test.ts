@@ -108,4 +108,20 @@ describe("ProductApiClient", () => {
       status: "connected",
     });
   });
+
+  it("supports knowledge source list and creation", async () => {
+    const client = new ProductApiClient();
+
+    await expect(client.getKnowledgeSourceSummaries()).resolves.toHaveLength(2);
+    await expect(
+      client.createKnowledgeSource({
+        name: "交付规范文档",
+        sourceType: "web-upload",
+      }),
+    ).resolves.toMatchObject({
+      name: "交付规范文档",
+      sourceType: "web-upload",
+      status: "syncing",
+    });
+  });
 });

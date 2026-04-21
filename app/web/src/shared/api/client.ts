@@ -1,6 +1,7 @@
 import type {
   AuditEventSummary,
   ChannelConnectionSummary,
+  KnowledgeSourceSummary,
   SessionDetail,
   SessionSummary,
   SettingsDetail,
@@ -13,6 +14,7 @@ import type {
 import {
   mockAuditEvents,
   mockConnections,
+  mockKnowledgeSources,
   mockRunDetails,
   mockRuns,
   mockSessionDetails,
@@ -29,6 +31,11 @@ export type CreateWorkflowInput = {
 };
 
 export type UpdateSettingsInput = Partial<SettingsDetail>;
+
+export type CreateKnowledgeSourceInput = {
+  name?: string;
+  sourceType?: KnowledgeSourceSummary["sourceType"];
+};
 
 type ProductApiClientOptions = {
   baseUrl?: string;
@@ -240,6 +247,28 @@ export class ProductApiClient {
     return await this.read("/api/audit-events", () => mockAuditEvents);
   }
 
+  async getKnowledgeSourceSummaries() {
+    return await this.read("/api/knowledge-sources", () => mockKnowledgeSources);
+  }
+
+  async createKnowledgeSource(input: CreateKnowledgeSourceInput) {
+    return await this.write(
+      "/api/knowledge-sources",
+      {
+        method: "POST",
+        body: input,
+      },
+      () => ({
+        id: "knowledge-local",
+        name: input.name?.trim() || "未命名知识源",
+        sourceType: input.sourceType ?? "web-upload",
+        status: "syncing" as const,
+        updatedAt: new Date().toISOString(),
+        documentCount: 0,
+      }),
+    );
+  }
+
   private buildUrl(path: string) {
     if (!this.baseUrl) {
       return path;
@@ -308,6 +337,7 @@ export const productApiClient = createProductApiClient({
 export type {
   AuditEventSummary,
   ChannelConnectionSummary,
+  KnowledgeSourceSummary,
   SessionDetail,
   SessionSummary,
   SettingsDetail,

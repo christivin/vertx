@@ -2,14 +2,15 @@ import {
   createMockProductApiState,
   type AuditEventSummary,
   type ChannelConnectionSummary,
+  type KnowledgeSourceSummary,
   type ProductApiState,
+  type SessionDetail,
+  type SessionSummary,
   type SettingsDetail,
   type WorkflowDetail,
   type WorkflowRunDetail,
   type WorkflowRunSummary,
   type WorkflowSummary,
-  type SessionDetail,
-  type SessionSummary,
 } from "@vertx/api";
 
 export type Workflow = {
@@ -37,6 +38,11 @@ export type CreateWorkflowInput = {
 
 export type UpdateSettingsInput = Partial<SettingsDetail>;
 
+export type CreateKnowledgeSourceInput = {
+  name?: string;
+  sourceType?: KnowledgeSourceSummary["sourceType"];
+};
+
 export type ProductApiStore = ReturnType<typeof createProductApiStore>;
 
 export type ProductApiRepository = {
@@ -61,6 +67,8 @@ export type ProductApiRepository = {
   upsertConnection: (connection: ChannelConnectionSummary) => ChannelConnectionSummary;
   getSettings: () => SettingsDetail;
   setSettings: (settings: SettingsDetail) => void;
+  listKnowledgeSources: () => KnowledgeSourceSummary[];
+  prependKnowledgeSource: (knowledgeSource: KnowledgeSourceSummary) => void;
   listAuditEvents: () => AuditEventSummary[];
   prependAuditEvent: (event: AuditEventSummary) => void;
 };
@@ -238,6 +246,12 @@ export function createInMemoryProductApiRepository(
     },
     setSettings(settings) {
       state.settings = settings;
+    },
+    listKnowledgeSources() {
+      return state.knowledgeSources;
+    },
+    prependKnowledgeSource(knowledgeSource) {
+      state.knowledgeSources.unshift(knowledgeSource);
     },
     listAuditEvents() {
       return state.auditEvents;
@@ -505,6 +519,7 @@ export function createProductApiStore(
       : createInMemoryProductApiRepository(repositoryOrState);
   let workflowCounter = repository.listWorkflows().length + 1;
   let runCounter = repository.listRuns().length + 1;
+  let knowledgeCounter = repository.listKnowledgeSources().length + 1;
   let auditCounter = repository.listAuditEvents().length + 1;
 
   const appendAuditEvent = (action: string, level: AuditEventSummary["level"] = "info") => {
@@ -621,6 +636,23 @@ export function createProductApiStore(
       repository.setSettings(settings);
       appendAuditEvent("settings.updated");
       return settings;
+    },
+    listKnowledgeSources() {
+      return repository.listKnowledgeSources();
+    },
+    createKnowledgeSource(input: CreateKnowledgeSourceInput) {
+      const id = `knowledge-${knowledgeCounter++}`;
+      const knowledgeSource: KnowledgeSourceSummary = {
+        id,
+        name: input.name?.trim() || `未命名知识源 ${id}`,
+        sourceType: input.sourceType ?? "web-upload",
+        status: "syncing",
+        updatedAt: isoNow(),
+        documentCount: 0,
+      };
+      repository.prependKnowledgeSource(knowledgeSource);
+      appendAuditEvent("knowledge_source.created");
+      return knowledgeSource;
     },
     listAuditEvents() {
       return repository.listAuditEvents();

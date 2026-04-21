@@ -1,5 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { productApiClient, type CreateWorkflowInput, type UpdateSettingsInput } from "./client";
+import {
+  productApiClient,
+  type CreateKnowledgeSourceInput,
+  type CreateWorkflowInput,
+  type UpdateSettingsInput,
+} from "./client";
 
 export function useWorkbenchSummary() {
   return useQuery({
@@ -128,5 +133,23 @@ export function useAuditEventSummaries() {
   return useQuery({
     queryKey: ["audit-event-summaries"],
     queryFn: () => productApiClient.getAuditEventSummaries(),
+  });
+}
+
+export function useKnowledgeSourceSummaries() {
+  return useQuery({
+    queryKey: ["knowledge-source-summaries"],
+    queryFn: () => productApiClient.getKnowledgeSourceSummaries(),
+  });
+}
+
+export function useCreateKnowledgeSourceMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateKnowledgeSourceInput) => productApiClient.createKnowledgeSource(input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["knowledge-source-summaries"] });
+      void queryClient.invalidateQueries({ queryKey: ["audit-event-summaries"] });
+    },
   });
 }

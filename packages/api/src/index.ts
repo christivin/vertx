@@ -53,6 +53,15 @@ export type SettingsDetail = {
   workspaceName: string;
 };
 
+export type KnowledgeSourceSummary = {
+  id: string;
+  name: string;
+  sourceType: "feishu-doc" | "web-upload" | "faq";
+  status: "ready" | "syncing" | "error";
+  updatedAt: string;
+  documentCount: number;
+};
+
 export type AuditEventSummary = {
   id: string;
   action: string;
@@ -148,6 +157,25 @@ export const mockSettings: SettingsDetail = {
   workspaceName: "Vertx Workspace",
 };
 
+export const mockKnowledgeSources: KnowledgeSourceSummary[] = [
+  {
+    id: "knowledge-1",
+    name: "飞书销售知识库",
+    sourceType: "feishu-doc",
+    status: "ready",
+    updatedAt: "2026-04-20T08:20:00.000Z",
+    documentCount: 24,
+  },
+  {
+    id: "knowledge-2",
+    name: "FAQ 导入集合",
+    sourceType: "faq",
+    status: "syncing",
+    updatedAt: "2026-04-20T07:55:00.000Z",
+    documentCount: 8,
+  },
+];
+
 export const mockAuditEvents: AuditEventSummary[] = [
   { id: "audit-1", action: "workflow.run.started", level: "info", happenedAt: "2026-04-20T08:10:00.000Z" },
   { id: "audit-2", action: "approval.requested", level: "warning", happenedAt: "2026-04-20T08:13:00.000Z" },
@@ -163,6 +191,7 @@ export type ProductApiState = {
   sessionDetails: SessionDetail[];
   connections: ChannelConnectionSummary[];
   settings: SettingsDetail;
+  knowledgeSources: KnowledgeSourceSummary[];
   auditEvents: AuditEventSummary[];
 };
 
@@ -177,6 +206,7 @@ export function createMockProductApiState(): ProductApiState {
     sessionDetails: structuredClone(mockSessionDetails),
     connections: structuredClone(mockConnections),
     settings: structuredClone(mockSettings),
+    knowledgeSources: structuredClone(mockKnowledgeSources),
     auditEvents: structuredClone(mockAuditEvents),
   };
 }

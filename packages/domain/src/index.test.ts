@@ -74,6 +74,28 @@ describe("createProductApiStore", () => {
     });
   });
 
+  it("creates knowledge sources and records audit events", () => {
+    const store = createProductApiStore();
+
+    const knowledgeSource = store.createKnowledgeSource({
+      name: "售前 FAQ",
+      sourceType: "faq",
+    });
+
+    expect(knowledgeSource).toMatchObject({
+      name: "售前 FAQ",
+      sourceType: "faq",
+      status: "syncing",
+    });
+    expect(store.listKnowledgeSources()[0]).toMatchObject({
+      id: knowledgeSource.id,
+      name: "售前 FAQ",
+    });
+    expect(store.listAuditEvents()[0]).toMatchObject({
+      action: "knowledge_source.created",
+    });
+  });
+
   it("can run against an injected repository boundary", () => {
     const repository = createInMemoryProductApiRepository();
     const store = createProductApiStore(repository);

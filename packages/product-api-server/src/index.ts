@@ -2,6 +2,7 @@ import { createServer as createHttpServer, type IncomingMessage, type ServerResp
 import { pathToFileURL } from "node:url";
 import {
   createInMemoryProductApiRepository,
+  type CreateKnowledgeSourceInput,
   createProductApiStore,
   type CreateWorkflowInput,
   type UpdateSettingsInput,
@@ -288,6 +289,17 @@ export async function startProductApiServer(
       if (request.method === "PUT" && routePath === "/settings") {
         const payload = await readJsonBody<UpdateSettingsInput>(request);
         writeJson(response, 200, store.updateSettings(payload));
+        return;
+      }
+
+      if (request.method === "GET" && routePath === "/knowledge-sources") {
+        writeJson(response, 200, store.listKnowledgeSources());
+        return;
+      }
+
+      if (request.method === "POST" && routePath === "/knowledge-sources") {
+        const payload = await readJsonBody<CreateKnowledgeSourceInput>(request);
+        writeJson(response, 201, store.createKnowledgeSource(payload));
         return;
       }
 

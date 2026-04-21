@@ -122,7 +122,7 @@ describe("startProductApiServer", () => {
     expect(logger.info).toHaveBeenCalledTimes(2);
   });
 
-  it("supports workflow creation, run creation, settings update, and feishu connect mutations", async () => {
+  it("supports workflow creation, run creation, settings update, feishu connect, and knowledge source mutations", async () => {
     const runtime = await startProductApiServer({
       host: "127.0.0.1",
       port: 0,
@@ -179,6 +179,27 @@ describe("startProductApiServer", () => {
       status: "connected",
     });
 
+    const knowledgeSourceResponse = await fetch(`${runtime.url}/knowledge-sources`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        name: "售后排障手册",
+        sourceType: "web-upload",
+      }),
+    });
+    expect(knowledgeSourceResponse.status).toBe(201);
+    await expect(knowledgeSourceResponse.json()).resolves.toMatchObject({
+      name: "售后排障手册",
+      sourceType: "web-upload",
+      status: "syncing",
+    });
+
+    const knowledgeSourcesListResponse = await fetch(`${runtime.url}/knowledge-sources`);
+    const knowledgeSources = (await knowledgeSourcesListResponse.json()) as Array<{ name: string }>;
+    expect(knowledgeSources[0]?.name).toBe("售后排障手册");
+
     const workbenchResponse = await fetch(`${runtime.url}/workbench/summary`);
     await expect(workbenchResponse.json()).resolves.toMatchObject({
       connectedChannels: 1,
@@ -186,7 +207,9 @@ describe("startProductApiServer", () => {
 
     const auditResponse = await fetch(`${runtime.url}/audit-events`);
     const auditEvents = (await auditResponse.json()) as Array<{ action: string }>;
-    expect(auditEvents[0]?.action).toBe("channel_connection.feishu.connected");
+    expect(auditEvents.map((item) => item.action)).toEqual(
+      expect.arrayContaining(["channel_connection.feishu.connected", "knowledge_source.created"]),
+    );
   });
 
   it("can mirror realtime gateway events into product api state", async () => {

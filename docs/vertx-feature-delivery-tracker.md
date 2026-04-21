@@ -56,12 +56,12 @@
 | F-006 | 会话列表 | P1 | 部分可用 | 已接 session summaries，并已补详情页跳转入口与更新时间列 | 无专项测试 | 已做基础页面浏览 | 仍需补筛选和更强状态感知 | 未开始 | 等 F-007 完成后补搜索/过滤 |
 | F-007 | 会话详情 Realtime 主链路 | P0 | 待验证 | 已接路由 `sessionId`、session detail query、demo 回放、history sync、approval/tool/queue 展示 | `state.test.ts` + `session-detail.test.tsx` 已覆盖 reducer 与页面 demo 回放主路径 | 已通过 typecheck / test / build，待补一次手动页面联调 | 已修正文档与页面状态收口 | 未开始 | 做一次手动页面验证，确认 gateway/mock 两种 plane 展示 |
 | F-008 | 审批状态与审批处理感知 | P0 | 待验证 | reducer 和页面展示都已接上，mock frames 已补 `approval.requested` 样例 | `state.test.ts` 已覆盖 requested/resolved | 已通过构建和单测，待补页面联调 | 已补会话页 UI 触达路径 | 未开始 | 与 F-007 同步做手动验证 |
-| F-009 | 知识源管理 | P0 | 未开始 | 当前仍是占位页 | 无 | 无 | 无 | 无 | 新增 domain/api/server/frontend 资源与页面 |
+| F-009 | 知识源管理 | P0 | 部分可用 | 已补 knowledge source 列表、创建表单、来源类型/同步状态/更新时间展示 | domain/server/client/page 已补自动化测试覆盖 | 待做手动创建验证 | 页面已从占位页切到真实 Product API 资源 | 未开始 | 验证创建后列表与审计沉淀，再决定是否补详情/问答入口 |
 | F-010 | 自动化管理 | P0 | 未开始 | 当前仍是占位页 | 无 | 无 | 无 | 无 | 新增 domain/api/server/frontend 资源与状态切换 |
 | F-011 | 接入管理 | P0 | 部分可用 | 已接列表、飞书连接按钮、状态刷新和连接结果反馈 | `connections.test.tsx` 已覆盖页面连接反馈主路径 | 待做手动连接验证 | 页面动作已补齐，仍需联调真实配置 | 未开始 | 在 F-007 验证完成后验证飞书连接后的状态刷新与审计沉淀 |
 | F-012 | 设置管理 | P0 | 部分可用 | 已接 query/mutation，并补可编辑表单、脏态识别和保存反馈 | `settings.test.tsx` 已覆盖页面编辑与保存反馈主路径 | 待做保存链路验证 | 页面已从只读改为可编辑 | 未开始 | 在 F-007 验证完成后验证保存后设置刷新与审计日志写入 |
 | F-013 | 审计与日志 | P1 | 部分可用 | 已接 audit 列表，mirror 能写入事件 | domain/server 已有测试覆盖 | 未做按场景手动验证 | 需要补筛选和关联视图 | 未开始 | 等前几项动作闭环后验证事件沉淀 |
-| F-014 | Product API 数据面 | P0 | 部分可用 | workbench/workflow/run/session/connection/settings/audit 已完成；knowledge/automation 未补 | server/domain 有测试 | 已通过单测，未做全资源联调 | 需要扩资源 | 未开始 | 给 F-009 / F-010 增加资源模型 |
+| F-014 | Product API 数据面 | P0 | 部分可用 | workbench/workflow/run/session/connection/settings/audit/knowledge 已完成；automation 未补 | server/domain 有测试 | 已通过单测，未做全资源联调 | 仍需继续扩自动化资源 | 未开始 | 给 F-010 增加资源模型 |
 | F-015 | Realtime Gateway 与前端状态机 | P0 | 部分可用 | 已有 gateway contracts、adapter、server、reducer、history recovery | 多处已有测试 | 已做基础连接验证 | 需要补页面级端到端验证 | 未开始 | 先把 session detail 页面闭环 |
 | F-016 | Realtime Mirror 到 Product API | P0 | 已完成 | 已支持 run/chat/session/tool/approval mirror | domain/server 已覆盖测试 | 已通过接口测试 | 仅后续补场景验证 | 未开始 | 后续与真实 openclaw 联调时再复核 |
 | F-017 | OpenClaw 适配层 | P1 | 部分可用 | 已有基础 adapter/source | 有基础测试 | 未做完整契约验证 | 需要补契约测试与修改清单 | 未开始 | 在产品功能稳定后继续强化 |

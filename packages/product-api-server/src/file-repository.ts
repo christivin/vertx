@@ -74,6 +74,11 @@ export function createFileProductApiRepository(filePath: string): ProductApiRepo
       repository.setSettings(settings);
       persist();
     },
+    listKnowledgeSources: repository.listKnowledgeSources,
+    prependKnowledgeSource(knowledgeSource) {
+      repository.prependKnowledgeSource(knowledgeSource);
+      persist();
+    },
     prependAuditEvent(event) {
       repository.prependAuditEvent(event);
       persist();
